@@ -37,6 +37,7 @@ body {
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#base { position: fixed; left: 0; top: 0; transform-origin: 0 0; will-change: transform; pointer-events: none; }
 #map { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
 #map.dragging { cursor: grabbing; }
 #map.picking { cursor: crosshair; }
@@ -193,6 +194,40 @@ button { cursor: pointer; }
   max-width: calc(100% - 300px); text-align: center; font-size: 12.5px; color: #8fb3c4; letter-spacing: .03em; line-height: 1.3; pointer-events: none;
 }
 
+
+/* ---------- map icon legend */
+.lgbtn {
+  width: 48px; height: 50px; border-radius: 12px; border: 2px solid var(--line); background: rgba(11,22,34,.9); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+}
+.lgbtn svg { width: 22px; height: 22px; }
+.lgbtn:hover, .lgbtn[aria-expanded="true"] { color: var(--gold); border-color: var(--gold); }
+.legend {
+  position: fixed; z-index: 6; top: calc(16px + env(safe-area-inset-top, 0px)); right: calc(max(16px, env(safe-area-inset-right, 0px)) + 70px);
+  width: 330px; max-height: calc(100% - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto;
+  padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.lg-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lg-act { display: flex; gap: 4px; }
+.lg-act button { height: 28px; min-width: 28px; padding: 0 8px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,.2); background: transparent; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+.lg-act button:hover { border-color: var(--gold); color: var(--gold); }
+#legendClose { font-size: 18px; line-height: 1; padding: 0; }
+.lg-h { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--muted); margin-top: 6px; }
+.lg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.lg-item {
+  display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 7px; padding: 4px 7px 4px 4px; border-radius: 10px;
+  border: 1.5px solid transparent; background: rgba(255,255,255,.05); text-align: left; min-width: 0;
+}
+.lg-item img { width: 26px; height: 26px; display: block; }
+.lg-item .lg-n { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg-item .lg-c { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lg-item:hover { border-color: rgba(255,207,63,.5); }
+.lg-item[aria-pressed="false"] { opacity: .38; }
+.lg-item[aria-pressed="false"] img { filter: grayscale(1); }
+.lg-hint { margin: 2px 0 0; font-size: 14.5px; color: var(--pink-soft); line-height: 1.3; }
+.lg-hint button { border: 0; background: none; padding: 0; color: var(--gold); font-weight: 700; text-decoration: underline; }
+.lg-src { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+
 /* ---------- popup on map */
 .pop {
   position: fixed; z-index: 6; transform: translate(-50%, calc(-100% - 18px)); min-width: 200px; max-width: 260px;
@@ -245,6 +280,200 @@ button { cursor: pointer; }
 @keyframes lb { from { transform: translateX(-10%); } to { transform: translateX(160%); } }
 
 /* ---------- phones: search on top, trip card as a bottom sheet */
+
+/* ---------- crew missions + rewards (src/missions.js) */
+.toast { z-index: 30; }
+.hudtabs { display: grid; grid-template-columns: 1fr 1.5fr 1.1fr; gap: 4px; padding: 4px; background: var(--field); border-radius: 12px; }
+.hudtabs button { height: 34px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 700; letter-spacing: .1em; font-size: 14px; white-space: nowrap; }
+.hudtabs button:hover { color: #fff; }
+.hudtabs button[aria-selected="true"] { background: var(--gold); color: var(--ink); }
+.hudtabs .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--pink); margin-left: 5px; vertical-align: 2px; }
+body.crew-mode .fields, body.crew-mode .modes, body.crew-mode #ztlToggle, body.crew-mode .missions, body.crew-mode #trip { display: none !important; }
+.crew { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.cw-me { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1.5px solid rgba(255,207,63,.2); }
+.cw-av { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-size: 12px; color: #fff; border: 2.5px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.cw-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cw-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.cw-rank { font-family: var(--f-label); font-size: 16px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-lvl { font-family: var(--f-display); font-size: 12px; color: var(--gold); white-space: nowrap; }
+.cw-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.cw-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--pink)); border-radius: 4px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.cw-sub { font-size: 14px; color: var(--muted); display: flex; gap: 10px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.cw-sub b { color: var(--fg); }
+.cw-body { overflow-y: auto; min-height: 0; flex: 1; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
+.cw-post { height: 44px; font-size: 15px; }
+.cw-filters { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.cw-filters .toggle { font-size: 15px; }
+.cw-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mc { display: grid; grid-template-columns: 34px 1fr auto; gap: 3px 10px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1.5px solid transparent; background: rgba(255,255,255,.04); text-align: left; width: 100%; }
+.mc:hover { background: rgba(255,207,63,.09); }
+.mc.mine { border-color: rgba(255,207,63,.5); }
+.mc .t { font-weight: 700; font-size: 17.5px; line-height: 1.1; min-width: 0; }
+.mc .s { grid-column: 2 / 4; font-size: 14.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 3px 8px; align-items: center; min-width: 0; }
+.mc .xp { font-family: var(--f-display); font-size: 12px; color: var(--gold); white-space: nowrap; }
+.mc .cwi { grid-row: 1 / 3; }
+.cwi { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid #fff; display: grid; place-items: center; box-sizing: border-box; }
+.cwi svg { width: 20px; height: 20px; }
+.slots { display: inline-flex; gap: 3px; }
+.slots i { width: 9px; height: 9px; border-radius: 50%; background: #3fd17a; }
+.slots i.e { background: transparent; border: 1.5px solid var(--muted); box-sizing: border-box; }
+.pl { display: inline-flex; align-items: center; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1.5px solid currentColor; line-height: 1.25; white-space: nowrap; }
+.pl.v { color: #3fd17a; } .pl.w { color: var(--pink); } .pl.n { color: #b07bff; } .pl.r { color: var(--gold); } .pl.mu { color: var(--muted); }
+.cw-note { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.cw-empty { color: var(--muted); padding: 14px 6px; text-align: center; }
+.cw-back { align-self: flex-start; background: none; border: 0; color: var(--gold); font-weight: 700; letter-spacing: .1em; font-size: 14px; padding: 2px 0; }
+.cw-head { display: flex; gap: 12px; align-items: flex-start; }
+.cw-head .cwi { width: 46px; height: 46px; }
+.cw-head .cwi svg { width: 28px; height: 28px; }
+.cw-head h3 { margin: 4px 0 0; font-family: var(--f-label); font-size: 21px; line-height: 1.12; letter-spacing: .03em; text-transform: uppercase; text-wrap: balance; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 16px; }
+.facts dt { color: var(--muted); letter-spacing: .06em; text-transform: uppercase; font-size: 13.5px; padding-top: 2px; }
+.facts dd { margin: 0; font-weight: 700; }
+.cw-desc { margin: 0; font-size: 16.5px; line-height: 1.35; color: #e6e2d8; }
+.host { display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 14px; background: var(--field); }
+.host .cw-av { width: 44px; height: 44px; }
+.host .hn { font-family: var(--f-label); font-size: 17px; letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.host .hs { font-size: 14.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.host .hs b { color: var(--gold); }
+.crewrow { display: flex; gap: 6px; flex-wrap: wrap; }
+.crewrow .cw-av { width: 34px; height: 34px; font-size: 11px; }
+.crewrow .open { width: 34px; height: 34px; border-radius: 50%; border: 2.5px dashed var(--muted); display: grid; place-items: center; color: var(--muted); font-size: 18px; box-sizing: border-box; }
+.crewrow .open.you { border-style: solid; border-color: var(--gold); color: var(--gold); font-family: var(--f-display); font-size: 10px; }
+.rewards { display: flex; gap: 8px; flex-wrap: wrap; }
+.rw { flex: 1 1 90px; padding: 7px 9px; border-radius: 12px; background: rgba(255,207,63,.08); border: 1.5px solid rgba(255,207,63,.3); display: flex; flex-direction: column; }
+.rw b { font-family: var(--f-display); font-size: 17px; color: var(--gold); font-weight: 400; }
+.rw span { font-size: 13.5px; color: var(--muted); }
+.safety { list-style: none; margin: 0; padding: 9px 11px; border-radius: 14px; background: rgba(63,209,122,.07); border: 1.5px solid rgba(63,209,122,.3); display: flex; flex-direction: column; gap: 5px; font-size: 15px; line-height: 1.25; }
+.safety li::before { content: "✓"; color: #3fd17a; font-weight: 700; margin-right: 7px; }
+.cw-link { background: none; border: 0; color: var(--muted); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; padding: 0; align-self: flex-start; }
+.cw-link:hover { color: #ff6b6b; }
+.chat { display: flex; flex-direction: column; gap: 5px; }
+.msg { max-width: 85%; padding: 6px 10px; border-radius: 12px; font-size: 15.5px; line-height: 1.25; background: var(--field); align-self: flex-start; }
+.msg b { display: block; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.msg.me { align-self: flex-end; background: rgba(255,63,164,.2); }
+.msg.sys { align-self: center; background: transparent; color: var(--muted); font-size: 14px; }
+.cw-count { font-family: var(--f-display); font-size: 36px; line-height: .9; color: var(--gold); }
+.cw-count small { font-size: 15px; color: #fff; margin-left: 5px; }
+.passed { text-align: center; }
+.passed .big2 { font-family: var(--f-display); font-size: 32px; line-height: 1; background: linear-gradient(#ffe37a, #ff8a3d 60%, #ff3f7f); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #2a0d1d); }
+.passed .sub2 { font-family: var(--f-script); font-size: 18px; margin-top: 4px; }
+.badge-up { display: flex; align-items: center; gap: 12px; padding: 9px 11px; border-radius: 14px; background: linear-gradient(90deg, rgba(176,123,255,.2), rgba(255,63,164,.15)); border: 1.5px solid rgba(176,123,255,.5); }
+.medal { flex: none; width: 38px; height: 38px; margin: 4px; border-radius: 10px; transform: rotate(45deg); background: linear-gradient(135deg, #b07bff, var(--pink)); display: grid; place-items: center; border: 2.5px solid #fff; box-sizing: border-box; }
+.medal svg { transform: rotate(-45deg); width: 22px; height: 22px; }
+.cw-chips .chip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+
+/* mission blips on the map: DOM overlay, moved with transforms from the camera */
+#crewLayer { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+.blip { position: absolute; left: 0; top: 0; width: 0; height: 0; border: 0; padding: 0; background: none; pointer-events: none; will-change: transform; }
+.blip .b { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; box-shadow: 0 4px 10px rgba(0,0,0,.45); pointer-events: auto; cursor: pointer; box-sizing: border-box; transition: transform .15s; }
+.blip .b svg { width: 22px; height: 22px; pointer-events: none; }
+.blip .ring { position: absolute; left: -26px; top: -26px; width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--pink); box-sizing: border-box; animation: cwping 2.2s ease-out infinite; pointer-events: none; }
+.blip.mine .ring { border-color: var(--gold); }
+.blip .n { position: absolute; left: 10px; top: -29px; font-family: var(--f-display); font-size: 11px; line-height: 1; padding: 3px 5px 2px; border-radius: 6px; background: var(--ink); color: var(--gold); border: 1.5px solid var(--gold); white-space: nowrap; pointer-events: none; }
+.blip .b:hover, .blip.sel .b { transform: scale(1.15); }
+.blip.sel .ring { border-color: var(--gold); }
+.blip.dim { opacity: .3; }
+.blip.far .n, .blip.far .ring { display: none; }
+.blip.far .b { transform: scale(.7); }
+@keyframes cwping { 0% { transform: scale(.7); opacity: .95; } 100% { transform: scale(1.45); opacity: 0; } }
+
+/* post wizard */
+.cw-modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(4,10,16,.6); padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wiz { width: min(600px, 100%); max-height: calc(100% - 8px); display: flex; flex-direction: column; overflow: hidden; }
+.wiz-head { padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1.5px solid rgba(255,207,63,.2); }
+.wiz-head .row { display: flex; align-items: center; gap: 10px; }
+.wiz-head h3 { margin: 0; font-family: var(--f-label); font-size: 22px; letter-spacing: .03em; text-transform: uppercase; }
+.cw-x { margin-left: auto; flex: none; width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--field); color: var(--muted); font-size: 22px; line-height: 1; }
+.cw-x:hover { color: #fff; }
+.wsteps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.wsteps i { height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); }
+.wsteps i.on { background: var(--gold); }
+.wiz-body { padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.wiz-foot { padding: 12px 16px 14px; display: flex; justify-content: space-between; gap: 10px; border-top: 1.5px solid rgba(255,207,63,.2); }
+.wiz-foot .btn-go { padding: 0 20px; }
+.btn-gold { height: 46px; padding: 0 20px; border: 0; border-radius: 12px; font-family: var(--f-display); font-size: 15px; letter-spacing: .06em; color: var(--ink); background: linear-gradient(#ffe37a, #ffb72f); box-shadow: 0 4px 0 #9a6a00; }
+.btn-gold:active { transform: translateY(2px); box-shadow: none; }
+.btn-gold[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.types { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px; }
+.type { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 9px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.14); background: var(--field); text-align: left; }
+.type:hover, .place:hover { border-color: var(--gold); }
+.type[aria-pressed="true"], .place[aria-pressed="true"] { border-color: var(--gold); background: rgba(255,207,63,.14); }
+.type b { font-size: 16.5px; line-height: 1.1; }
+.type span { font-size: 13.5px; color: var(--muted); line-height: 1.15; }
+.qlabel { font-family: var(--f-display); font-size: 12px; letter-spacing: .08em; color: var(--gold); margin-bottom: -5px; }
+.places { display: flex; flex-direction: column; gap: 6px; }
+.place { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.14); background: var(--field); text-align: left; }
+.place .pt { font-weight: 700; font-size: 16.5px; }
+.place .ps { font-size: 13.5px; color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--field); border-radius: 12px; padding: 4px; align-self: flex-start; }
+.stepper button { width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; font-size: 22px; color: var(--gold); }
+.stepper output { min-width: 80px; text-align: center; font-family: var(--f-display); font-size: 15px; }
+.inp { width: 100%; box-sizing: border-box; height: 44px; padding: 0 12px; border-radius: 12px; border: 1.5px solid transparent; background: var(--field); font-size: 17px; font-weight: 700; outline: 0; }
+.inp:focus { border-color: var(--gold); }
+.hint { font-size: 14.5px; color: var(--muted); line-height: 1.3; }
+.summary { padding: 11px; border-radius: 14px; background: rgba(255,63,164,.1); border: 1.5px solid rgba(255,63,164,.35); display: flex; flex-direction: column; gap: 4px; }
+
+/* rewards overlay */
+.rwd { position: fixed; inset: 0; z-index: 15; overflow-y: auto; background: rgba(7,18,28,.95); overscroll-behavior: contain; }
+.rwd-in { max-width: 1140px; margin: 0 auto; padding-top: calc(24px + env(safe-area-inset-top, 0px)); padding-bottom: 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 30px; }
+.rwd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.rwd h2 { margin: 0; font-family: var(--f-display); font-size: clamp(28px, 4.5vw, 44px); line-height: 1; }
+.rwd h2 em { font-style: normal; color: var(--pink); }
+.rwd .lede { max-width: 64ch; font-size: 18px; line-height: 1.4; color: #dcd8ce; margin: 10px 0 0; }
+.rwd-close { flex: none; height: 44px; }
+.wallet { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding: 14px 18px; border-radius: 18px; border: 2px solid var(--line); background: rgba(255,207,63,.06); }
+.wallet .cw-count { font-size: 50px; }
+.wallet .hint { max-width: 52ch; padding-bottom: 4px; }
+.sec { display: flex; flex-direction: column; gap: 12px; }
+.sec-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.sec-h h3 { margin: 0; font-family: var(--f-label); font-size: 24px; letter-spacing: .04em; text-transform: uppercase; }
+.sec-h p { margin: 0; color: var(--muted); font-size: 16.5px; }
+.track { display: flex; overflow-x: auto; padding: 6px 2px 10px; }
+.node { flex: 0 0 156px; display: flex; flex-direction: column; gap: 6px; position: relative; padding-right: 12px; }
+.node::before { content: ""; position: absolute; left: 22px; right: 0; top: 21px; height: 4px; background: rgba(255,255,255,.15); }
+.node.on::before { background: var(--gold); }
+.node:last-child::before { display: none; }
+.node .lv { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-size: 15px; background: #2a3746; color: var(--muted); border: 3px solid rgba(255,255,255,.2); box-sizing: border-box; }
+.node.on .lv { background: var(--gold); color: var(--ink); border-color: #fff; }
+.node.cur .lv { background: var(--pink); color: #fff; border-color: #fff; box-shadow: 0 0 0 5px rgba(255,63,164,.3); }
+.node b { font-family: var(--f-label); font-size: 15px; letter-spacing: .05em; text-transform: uppercase; }
+.node span { font-size: 15px; line-height: 1.25; color: #d6d2c8; }
+.node:not(.on) span { color: var(--muted); }
+.shop, .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 12px; }
+.item, .ic { padding: 14px; border-radius: 16px; background: rgba(255,255,255,.045); border: 1.5px solid rgba(255,255,255,.1); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.item .ih { display: flex; align-items: center; gap: 10px; }
+.item .vn { font-size: 14px; color: var(--muted); }
+.item h4, .ic h4 { margin: 0; font-family: var(--f-label); font-size: 18px; letter-spacing: .03em; text-transform: uppercase; line-height: 1.1; }
+.item p, .ic p { margin: 0; font-size: 15.5px; line-height: 1.3; color: #d6d2c8; }
+.item .buy { margin-top: auto; height: 42px; font-size: 13px; }
+.item .buy.confirm { background: linear-gradient(#ff5cb4, #e0237f); color: #fff; box-shadow: 0 4px 0 #8f124f; }
+.item.owned { border-color: rgba(63,209,122,.45); }
+.swatch { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #fff; flex: none; box-sizing: border-box; }
+.vouchers { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.voucher { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; background: #f4f1ea; color: var(--ink); border: 2px dashed var(--ink); }
+.voucher .vt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.voucher .vt b { font-family: var(--f-label); font-size: 17px; text-transform: uppercase; }
+.voucher .vt span { font-size: 14px; color: #4b5563; }
+.voucher .code { font-family: var(--f-display); font-size: 20px; letter-spacing: .08em; color: var(--ink) !important; }
+.qr { flex: none; width: 56px; height: 56px; }
+.never { padding: 14px 16px; border-radius: 16px; background: rgba(63,209,122,.08); border: 1.5px solid rgba(63,209,122,.4); }
+.never b { font-family: var(--f-display); font-size: 13px; letter-spacing: .08em; color: #3fd17a; font-weight: 400; }
+.never p { margin: 6px 0 0; font-size: 16.5px; line-height: 1.35; }
+
+@media (min-width: 761px) {
+  body.crew-mode .side .panel { flex: none; }
+  .crew { flex: 1 1 auto; }
+}
+@media (max-width: 760px) {
+  .hudtabs button { font-size: 13px; letter-spacing: .06em; }
+  .crew { position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-height: 50%; }
+  body.crew-mode .ctrl { bottom: calc(52% + 12px); }
+  body.crew-mode .credits { display: none; }
+  .rwd-top { flex-direction: column-reverse; }
+  .rwd-close { align-self: flex-end; }
+}
+@media (prefers-reduced-motion: reduce) { .blip .ring { animation: none; } .cw-bar i { transition: none; } }
+
 @media (max-width: 760px) {
   .side { left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); top: calc(12px + env(safe-area-inset-top, 0px)); width: auto; max-height: none; bottom: auto; }
   .panel { padding: 12px; gap: 10px; }
@@ -265,6 +494,7 @@ button { cursor: pointer; }
   .steps { max-height: 180px; }
   .ctrl { top: auto; bottom: calc(240px + env(safe-area-inset-bottom, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
   .ctrl .compass { display: none; }
+  .legend { top: auto; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); width: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-height: 62%; z-index: 9; }
   .no-trip .ctrl { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
   .scale { display: none; }
   .credits { left: 12px; right: 12px; transform: none; max-width: none; font-size: 11px; bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
@@ -288,6 +518,7 @@ button { cursor: pointer; }
 }
 </style>
 
+<canvas id="base" aria-hidden="true"></canvas>
 <canvas id="map" aria-label="Map of Bologna. Drag to pan, scroll or pinch to zoom, click to drop a waypoint."></canvas>
 
 <div class="loading" id="loading" role="status">
@@ -304,6 +535,11 @@ button { cursor: pointer; }
       <div class="logo" aria-label="Bologna Waypoint">BOLOGNA</div>
       <div class="tag">waypoint · city GPS</div>
     </header>
+    <div class="hudtabs" role="tablist" aria-label="App mode">
+      <button type="button" role="tab" data-tab="route" aria-selected="true">ROUTE</button>
+      <button type="button" role="tab" data-tab="crew" aria-selected="false">MISSIONS<span class="dot"></span></button>
+      <button type="button" role="tab" data-tab="rewards" aria-selected="false">REWARDS</button>
+    </div>
     <div class="fields">
       <div class="field">
         <span class="pin pin-a" aria-hidden="true">A</span>
@@ -355,7 +591,21 @@ button { cursor: pointer; }
     </div>
     <ol class="steps" id="steps" hidden></ol>
   </section>
+
+<section class="crew card" id="crew" aria-label="Crew missions" hidden>
+  <div class="cw-me">
+    <div class="cw-av" id="cwAv">YOU</div>
+    <div class="cw-meta">
+      <div class="cw-row"><span class="cw-rank" id="cwRank">Local</span><span class="cw-lvl" id="cwLvl">LV 7</span></div>
+      <div class="cw-bar"><i id="cwXp"></i></div>
+      <div class="cw-sub"><span id="cwXpT">340 / 500 XP</span><span><b>4.8</b> rep</span><span><b id="cwWallet">1,240</b> XP to spend</span></div>
+    </div>
+  </div>
+  <div class="cw-body" id="cwBody"></div>
+</section>
 </div>
+
+<div id="crewLayer" hidden></div>
 
 <div class="ctrl">
   <button class="compass" id="compass" type="button" aria-label="Show the whole city" title="Show the whole city">
@@ -368,10 +618,24 @@ button { cursor: pointer; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
     </button>
   </div>
+  <button class="lgbtn" id="legendBtn" type="button" aria-expanded="false" aria-controls="legend" title="Map icons">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/><path d="m2 17.5 10 5 10-5" opacity=".55"/></svg>
+    <span>ICONS</span>
+  </button>
 </div>
 
 <div class="scale" id="scale" aria-hidden="true"><span id="scaleTxt">1 KM</span><div class="bar" id="scaleBar" style="width:100px"></div></div>
 <div class="credits">Map data: Comune di Bologna Open Data (CC BY 4.0) · © OpenStreetMap contributors (ODbL) · Fan-made game-style map, not affiliated with any game publisher</div>
+
+<section class="legend card" id="legend" aria-label="Map icons" hidden>
+  <div class="lg-top">
+    <div class="eyebrow">MAP ICONS</div>
+    <div class="lg-act"><button type="button" id="lgAll">ALL</button><button type="button" id="lgNone">NONE</button><button type="button" id="legendClose" aria-label="Close map icons">×</button></div>
+  </div>
+  <p class="lg-hint" id="legendHint">Icons appear when you zoom into a neighbourhood. <button type="button" id="legendZoom">Zoom in</button></p>
+  <div id="legendList"></div>
+  <p class="lg-src">Places: © OpenStreetMap contributors. Tap a category to show or hide it.</p>
+</section>
 
 <div class="pop" id="pop" hidden>
   <div class="pt" id="popTitle"></div>
@@ -390,6 +654,45 @@ button { cursor: pointer; }
   <button class="end" type="button" id="navEnd">END</button>
 </div>
 
+<div class="cw-modal" id="cwModal" hidden>
+  <div class="wiz card" role="dialog" aria-modal="true" aria-labelledby="wizTitle">
+    <div class="wiz-head">
+      <div class="row"><span class="ribbon">NEW MISSION</span><h3 id="wizTitle">What's the plan?</h3><button class="cw-x" id="wizX" type="button" aria-label="Close">×</button></div>
+      <div class="wsteps" id="wizSteps"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="wiz-body" id="wizBody"></div>
+    <div class="wiz-foot"><button class="btn-ghost" id="wizBack" type="button">BACK</button><button class="btn-gold" id="wizNext" type="button">NEXT</button></div>
+  </div>
+</div>
+
+<section class="rwd" id="rwd" aria-label="Rewards" hidden>
+  <div class="rwd-in">
+    <div class="rwd-top">
+      <div>
+        <div class="eyebrow">REWARDS</div>
+        <h2>Spend your <em>XP</em></h2>
+        <p class="lede">Every XP you earn does two things. It fills your level bar, which never goes down, and it lands in your wallet, which you can spend here.</p>
+      </div>
+      <button class="btn-ghost rwd-close" id="rwdClose" type="button">BACK TO MAP</button>
+    </div>
+    <div class="wallet"><div class="cw-count" id="wBal">1,240<small>XP</small></div><div class="hint">Wallet balance. Spending XP never lowers your level. The partner offers below are sample offers at real Bologna venues.</div></div>
+    <div class="sec"><div class="sec-h"><h3>Level unlocks</h3><p>Free. They open up as your level goes up.</p></div><div class="track" id="track"></div></div>
+    <div class="sec"><div class="sec-h"><h3>Venue perks</h3><p>Real coffee, gelato and gym passes. Venues pay to list them.</p></div><div class="shop" id="shopPerks"></div></div>
+    <div class="sec" id="myVouchers" hidden><div class="sec-h"><h3>My vouchers</h3><p>Show the code at the counter. Valid for 7 days.</p></div><div class="vouchers" id="vouchers"></div></div>
+    <div class="sec"><div class="sec-h"><h3>Look &amp; titles</h3><p>Cosmetic only. Buy once, then equip.</p></div><div class="shop" id="shopStyle"></div></div>
+    <div class="sec"><div class="sec-h"><h3>Boosts</h3><p>Small advantages on the board that run out after a while.</p></div><div class="shop" id="shopBoost"></div></div>
+    <div class="sec"><div class="sec-h"><h3>Crew rewards</h3><p>Earned together, so people keep coming back as a group.</p></div>
+      <div class="grid">
+        <div class="ic"><h4>Full crew bonus</h4><p>When everyone in the crew checks in, each person gets 20% extra XP.</p></div>
+        <div class="ic"><h4>Crew-only offers</h4><p>Some venue perks need a crew, like a free tagliere for 4 people who check in together.</p></div>
+        <div class="ic"><h4>District crown</h4><p>The crew with the most missions in a neighbourhood each month gets its colour on that district and a crown badge.</p></div>
+        <div class="ic"><h4>Crew XP pot</h4><p>Named crews share a pot of XP they can spend together on a group perk.</p></div>
+      </div>
+    </div>
+    <div class="never"><b>NEVER FOR SALE</b><p>Women-only missions, ID verification, SOS, live sharing with a contact, reporting and blocking are free for everyone at every level. Nobody can buy their way past a host's approval either.</p></div>
+  </div>
+</section>
+
 <script>
 /* Bologna Waypoint: game-style city map with offline search and routing.
    Map + street graph: Comune di Bologna Open Data (CC BY 4.0) and OpenStreetMap (ODbL).
@@ -400,6 +703,7 @@ button { cursor: pointer; }
 // ------------------------------------------------------------------ config
 const DATA_URL = window.BW_DATA_URL || 'bologna.json';
 const TERRAIN_URL = window.BW_TERRAIN_URL || 'terrain.jpg';
+const PLACES_URL = window.BW_PLACES_URL || 'places.json';
 
 const C = {
   seaA: '#0e3b52', seaB: '#071f33', shelf: '#2f7f9a', shelf2: '#3c93ad',
@@ -478,6 +782,37 @@ const MISSIONS = [
   { from: 'Porta Saragozza', to: 'Sanctuary of San Luca', mode: 'walk', label: 'Portico trail to San Luca' },
   { from: 'Bologna Fiera', to: "Stadio Dall'Ara", mode: 'bike', label: 'Fiera → Stadium' },
 ];
+// Everyday places from OpenStreetMap, one original glyph per category (0..100 box, white on the blip colour).
+// group: legend section. alias: extra words people search with.
+const CATS = {
+  pizza: { name: 'Pizza', group: 'Food & drink', color: '#e8502f', alias: 'pizzeria pizza food eat', g: '<path d="M16 26Q50 6 84 26L50 92Z" fill="#fff"/><path d="M20 29Q50 13 80 29" stroke="{bg}" stroke-width="5" fill="none"/><circle cx="40" cy="40" r="6.5" fill="{bg}"/><circle cx="60" cy="44" r="5.5" fill="{bg}"/><circle cx="49" cy="62" r="5.5" fill="{bg}"/>' },
+  food: { name: 'Restaurants', group: 'Food & drink', color: '#f08a24', alias: 'restaurant ristorante trattoria osteria food eat', g: '<path d="M24 10v28c0 7 4 11 9 12v40h9V50c5-1 9-5 9-12V10h-6v26h-4V10h-6v26h-3V10z" fill="#fff"/><path d="M64 10c12 6 14 24 12 40h-4v40h-9V10z" fill="#fff"/>' },
+  burger: { name: 'Fast food', group: 'Food & drink', color: '#e9a514', alias: 'fast food burger kebab piadina', g: '<path d="M16 46c0-18 15-28 34-28s34 10 34 28z" fill="#fff"/><rect x="12" y="52" width="76" height="9" rx="4.5" fill="#fff"/><path d="M16 67h68v5c0 9-6 13-14 13H30c-8 0-14-4-14-13z" fill="#fff"/>' },
+  cafe: { name: 'Cafés', group: 'Food & drink', color: '#8b5a3c', alias: 'cafe caffe coffee espresso bar colazione', g: '<path d="M16 38h54v18c0 17-12 28-27 28S16 73 16 56z" fill="#fff"/><path d="M70 43h6a10 10 0 0 1 0 20h-8" stroke="#fff" stroke-width="7" fill="none"/><path d="M32 12c-5 7 5 11 0 18M48 12c-5 7 5 11 0 18" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>' },
+  bar: { name: 'Bars & pubs', group: 'Food & drink', color: '#c2367a', alias: 'bar pub drinks cocktail aperitivo spritz beer', g: '<path d="M12 14h76L50 54z" fill="#fff"/><circle cx="38" cy="24" r="6" fill="{bg}"/><rect x="45.5" y="50" width="9" height="28" fill="#fff"/><rect x="28" y="78" width="44" height="9" rx="4" fill="#fff"/>' },
+  gelato: { name: 'Gelato', group: 'Food & drink', color: '#ff6fae', alias: 'gelato gelateria ice cream', g: '<path d="M30 48h40L50 94z" fill="#fff"/><circle cx="38" cy="38" r="14" fill="#fff"/><circle cx="62" cy="38" r="14" fill="#fff"/><circle cx="50" cy="22" r="14" fill="#fff"/>' },
+  shop: { name: 'Supermarkets', group: 'Shopping', color: '#2f9e6a', alias: 'supermarket supermercato groceries grocery coop conad', g: '<path d="M6 18h14l10 44h46l10-32H26" stroke="#fff" stroke-width="8" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="38" cy="78" r="7.5" fill="#fff"/><circle cx="70" cy="78" r="7.5" fill="#fff"/>' },
+  clothes: { name: 'Clothes', group: 'Shopping', color: '#8e44c9', alias: 'clothes clothing fashion abbigliamento boutique shop', g: '<path d="M36 12 12 26l9 20 9-5v45h40V41l9 5 9-20-24-14c-3 9-25 9-28 0z" fill="#fff"/>' },
+  gym: { name: 'Gyms', group: 'Services', color: '#e0452f', alias: 'gym palestra fitness workout', g: '<rect x="28" y="45" width="44" height="10" fill="#fff"/><rect x="15" y="27" width="14" height="46" rx="4" fill="#fff"/><rect x="71" y="27" width="14" height="46" rx="4" fill="#fff"/><rect x="5" y="37" width="11" height="26" rx="3" fill="#fff"/><rect x="84" y="37" width="11" height="26" rx="3" fill="#fff"/>' },
+  barber: { name: 'Barbers', group: 'Services', color: '#3f6fd8', alias: 'barber hairdresser parrucchiere barbiere haircut salon', g: '<circle cx="28" cy="72" r="12" stroke="#fff" stroke-width="7" fill="none"/><circle cx="72" cy="72" r="12" stroke="#fff" stroke-width="7" fill="none"/><path d="M35 62 72 10M65 62 28 10" stroke="#fff" stroke-width="8" stroke-linecap="round"/>' },
+  tattoo: { name: 'Tattoo', group: 'Services', color: '#2b2b38', alias: 'tattoo tatuaggi piercing ink', g: '<path d="M50 88C20 66 10 50 10 34a20 20 0 0 1 40-6 20 20 0 0 1 40 6c0 16-10 32-40 54z" fill="#fff"/><path d="M22 44h56v14H22z" fill="{bg}"/><path d="M28 48h44v6H28z" fill="#fff"/>' },
+  pharmacy: { name: 'Pharmacies', group: 'Services', color: '#1f9d55', alias: 'pharmacy farmacia chemist medicine', g: '<g transform="rotate(-45 50 50)"><rect x="12" y="33" width="76" height="34" rx="17" fill="#fff"/><path d="M50 38h21a12 12 0 0 1 0 24H50z" fill="{bg}"/></g>' },
+  hospital: { name: 'Hospitals', group: 'Services', color: '#d93a3a', alias: 'hospital ospedale emergency pronto soccorso clinic', g: '<path d="M40 16h20v24h24v20H60v24H40V60H16V40h24z" fill="#fff"/>' },
+  police: { name: 'Police', group: 'Services', color: '#1f3c88', alias: 'police polizia carabinieri questura', g: '<path d="M50 8 84 20v26c0 22-14 38-34 46C30 84 16 68 16 46V20z" fill="#fff"/><path d="M50 28l6 12 13 1-10 9 3 13-12-7-12 7 3-13-10-9 13-1z" fill="{bg}"/>' },
+  bank: { name: 'Banks & ATMs', group: 'Services', color: '#2c8a4a', alias: 'bank banca atm bancomat cash money', g: '<path d="M76 24a30 30 0 1 0 0 52" stroke="#fff" stroke-width="11" fill="none"/><path d="M12 42h46M12 58h46" stroke="#fff" stroke-width="8"/>' },
+  hotel: { name: 'Hotels', group: 'Services', color: '#5b56c9', alias: 'hotel albergo hostel b&b sleep', g: '<rect x="8" y="26" width="9" height="60" fill="#fff"/><rect x="8" y="60" width="84" height="12" fill="#fff"/><rect x="83" y="60" width="9" height="26" fill="#fff"/><circle cx="30" cy="48" r="9" fill="#fff"/><path d="M44 39h36a12 12 0 0 1 12 12v6H44z" fill="#fff"/>' },
+  fuel: { name: 'Fuel', group: 'Car', color: '#c8102e', alias: 'fuel petrol gas station benzina distributore', g: '<rect x="18" y="12" width="42" height="76" rx="6" fill="#fff"/><rect x="26" y="20" width="26" height="20" rx="2" fill="{bg}"/><path d="M60 28h9l11 12v34a6 6 0 0 1-12 0V58h-8" stroke="#fff" stroke-width="6" fill="none" stroke-linejoin="round"/>' },
+  mechanic: { name: 'Car repair', group: 'Car', color: '#56626f', alias: 'car repair mechanic officina meccanico garage', g: '<path d="M72 8a22 22 0 0 0-24 28L10 74l16 16 38-38a22 22 0 0 0 28-24L78 42l-14-4-4-14z" fill="#fff"/>' },
+  carwash: { name: 'Car wash', group: 'Car', color: '#1f9fc4', alias: 'car wash autolavaggio', g: '<path d="M14 64l9-20h54l9 20v14H14z" fill="#fff"/><circle cx="30" cy="80" r="7.5" fill="#fff"/><circle cx="70" cy="80" r="7.5" fill="#fff"/><path d="M30 10c-7 11-7 18 0 18s7-7 0-18zM50 6c-7 11-7 18 0 18s7-7 0-18zM70 10c-7 11-7 18 0 18s7-7 0-18z" fill="#fff"/>' },
+  parking: { name: 'Parking', group: 'Car', color: '#2f6fd6', alias: 'parking parcheggio car park garage', g: '<path d="M28 88V12h26a22 22 0 0 1 0 44H42v32zM42 25v18h12a9 9 0 0 0 0-18z" fill="#fff" fill-rule="evenodd"/>' },
+  cinema: { name: 'Cinemas', group: 'Fun', color: '#b3122e', alias: 'cinema movies film theatre', g: '<rect x="12" y="40" width="76" height="46" rx="5" fill="#fff"/><path d="M12 24 80 12l3 16-68 12z" fill="#fff"/><path d="M27 21l8 15M47 17l8 15M67 14l8 15" stroke="{bg}" stroke-width="6"/>' },
+  club: { name: 'Nightclubs', group: 'Fun', color: '#7b2ff7', alias: 'nightclub club disco discoteca dance party', g: '<circle cx="50" cy="56" r="32" fill="#fff"/><path d="M18 56h64M50 24v64M24 40h52M24 72h52M38 26c-7 17-7 43 0 60M62 26c7 17 7 43 0 60" stroke="{bg}" stroke-width="3.5" fill="none"/><path d="M50 4v20" stroke="#fff" stroke-width="5"/>' },
+  museum: { name: 'Museums', group: 'Fun', color: '#a06a1f', alias: 'museum museo gallery art exhibition', g: '<path d="M50 8 92 30H8z" fill="#fff"/><rect x="16" y="36" width="11" height="38" fill="#fff"/><rect x="36" y="36" width="11" height="38" fill="#fff"/><rect x="54" y="36" width="11" height="38" fill="#fff"/><rect x="73" y="36" width="11" height="38" fill="#fff"/><rect x="8" y="78" width="84" height="12" fill="#fff"/>' },
+};
+const CAT_KEYS = Object.keys(CATS);
+const placeR = (s) => (s < 600 ? 10 : s < 1500 ? 12 : 14); // icon radius in px by zoom
+const PLACE_MIN_S = 230; // px per km: category icons appear from neighbourhood zoom
+
 const SEA_LABELS = [
   ['CASTEL MAGGIORE CHANNEL', 11.40, 44.566, 0], ['SAN LAZZARO STRAIT', 11.425, 44.438, 0],
   ['PIANURA PADANA BAY', 11.20, 44.53, -90], ['CASALECCHIO SOUND', 11.235, 44.44, 0],
@@ -530,8 +865,12 @@ function fmtClock(d) { return d.toLocaleTimeString([], { hour: '2-digit', minute
 
 // ------------------------------------------------------------------ canvas + camera
 const canvas = $('#map'), ctx = canvas.getContext('2d');
-const base = document.createElement('canvas'), bctx = base.getContext('2d');
-let W = 0, H = 0, DPR = 1;
+// The static map is drawn once into an oversized #base canvas. Panning and zooming only move it with a
+// CSS transform (GPU), and it is redrawn when the gesture settles or the view runs past its margin.
+// The #map canvas on top holds only the moving parts: route, markers, GPS car.
+const base = $('#base'), bctx = base.getContext('2d');
+let M = 220; // overscan margin in CSS px around the viewport (set in resize)
+let W = 0, H = 0, DPR = 1, baseCam = null, lastMove = 0;
 const cam = { x: 0, y: 0, s: 40 };
 let baseDirty = true, needFrame = true;
 const S_MIN = 18, S_MAX = 5000;
@@ -539,8 +878,11 @@ const S_MIN = 18, S_MAX = 5000;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
-  for (const c of [canvas, base]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
+  M = Math.round(clamp(Math.max(W, H) * .12, 100, 180));
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  base.width = Math.round((W + 2 * M) * DPR); base.height = Math.round((H + 2 * M) * DPR);
+  base.style.width = (W + 2 * M) + 'px'; base.style.height = (H + 2 * M) + 'px';
   baseDirty = true; needFrame = true;
 }
 const toScreen = (x, y) => [W / 2 + (x - cam.x) * cam.s, H / 2 - (y - cam.y) * cam.s];
@@ -549,7 +891,7 @@ function worldT(c) { c.setTransform(DPR * cam.s, 0, 0, -DPR * cam.s, DPR * (W / 
 function screenT(c) { c.setTransform(DPR, 0, 0, DPR, 0, 0); }
 function viewBox(m = 0) { const [x0, y1] = toWorld(-m, -m), [x1, y0] = toWorld(W + m, H + m); return [x0, y0, x1, y1]; }
 const boxHit = (b, v) => !(b[2] < v[0] || b[0] > v[2] || b[3] < v[1] || b[1] > v[3]);
-function setCam(x, y, s) { cam.x = x; cam.y = y; cam.s = clamp(s, S_MIN, S_MAX); clampCam(); baseDirty = true; needFrame = true; }
+function setCam(x, y, s) { cam.x = x; cam.y = y; cam.s = clamp(s, S_MIN, S_MAX); clampCam(); lastMove = performance.now(); needFrame = true; }
 function clampCam() {
   if (!D) return;
   const [x0, y0, x1, y1] = G.landBox;
@@ -590,6 +932,14 @@ function fitBox(b, ms = 900, maxS = 2600) {
   flyTo(x, y, s, ms);
 }
 
+function inPoly(f, x, y) { // even-odd point-in-ring test on a flat [x0,y0,x1,y1,...] ring
+  let o = false;
+  for (let i = 0, j = f.length - 2; i < f.length; j = i, i += 2) {
+    const ax = f[i], ay = f[i + 1], bx = f[j], by = f[j + 1];
+    if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) o = !o;
+  }
+  return o;
+}
 // ------------------------------------------------------------------ geometry build
 const G = {};
 function build() {
@@ -604,6 +954,7 @@ function build() {
   G.centro = G.zones.filter((z) => z.centro);
   const poly = (k) => { const p = new Path2D(); (D.osm[k] || []).forEach((r) => addLine(p, dec(r), true)); return p; };
   const lines = (arr) => { const p = new Path2D(); arr.forEach((r) => addLine(p, dec(r), false)); return p; };
+  G.zoneEdges = chunked(G.zones.flatMap((z) => z.rings));
   G.parks = poly('montagnola'); G.parks.addPath(poly('margherita'));
   G.stadio = poly('stadio'); G.fiera = poly('fiera'); G.airport = poly('airport');
   // runway along the airport's long axis
@@ -617,12 +968,11 @@ function build() {
   G.runway = [mx + ux * pmin * .86, my + uy * pmin * .86, mx + ux * pmax * .86, my + uy * pmax * .86];
   G.reno = lines(D.osm.reno); G.savena = lines(D.osm.savena); G.canal = lines(D.osm.canalereno);
   G.aposa = lines(D.osm.aposa || []);
-  G.rail = lines(D.rail);
-  G.contour = new Path2D(); G.contourMajor = new Path2D();
-  D.contours.forEach(([q, l]) => addLine(q % 100 ? G.contour : G.contourMajor, dec(l), false));
+  G.rail = chunked(D.rail.map(dec));
+  G.contour = chunked(D.contours.filter(([q]) => q % 100).map(([, l]) => dec(l)));
+  G.contourMajor = chunked(D.contours.filter(([q]) => !(q % 100)).map(([, l]) => dec(l)));
 
   // streets → arcs, class paths, graph
-  G.roads = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
   const nodeId = new Map(); const NX = [], NY = [];
   const node = (ix, iy, x, y) => {
     const k = ix * 1000003 + iy; let id = nodeId.get(k);
@@ -640,13 +990,33 @@ function build() {
       const sl = Math.hypot(f[i] - f[i - 2], f[i + 1] - f[i - 1]); L += sl; cum[i / 2] = L;
       if (sl > best) { best = sl; bi = i - 2; }
     }
-    addLine(G.roads[cls], f, false);
     const raw = D.names[ni];
     const unnamed = /^NOME VIA/.test(raw);
     // both carriageways of the ring road read as one road in directions
     const name = unnamed ? '' : /^TANGENZIALE/.test(raw) ? 'TANGENZIALE' : raw;
     return { name, raw, unnamed, label: unnamed ? 'unnamed road' : /^TANGENZIALE/.test(raw) ? 'Tangenziale' : titleCase(raw), cls, f, a, b, len: L, cum, bb: bbox(f), lseg: bi, ztl: false, noCar: NO_CARS.test(name) };
   });
+  // road chunks (1.5 km cells) so a redraw strokes only what is on screen
+  const CH = 1.5, chunkMap = [new Map(), new Map(), new Map(), new Map()];
+  for (const A of G.arcs) {
+    const key = Math.floor((A.bb[0] + A.bb[2]) / 2 / CH) * 1000 + Math.floor((A.bb[1] + A.bb[3]) / 2 / CH);
+    let ch = chunkMap[A.cls].get(key);
+    if (!ch) chunkMap[A.cls].set(key, ch = { path: new Path2D(), bb: [Infinity, Infinity, -Infinity, -Infinity] });
+    addLine(ch.path, A.f, false);
+    ch.bb = [Math.min(ch.bb[0], A.bb[0]), Math.min(ch.bb[1], A.bb[1]), Math.max(ch.bb[2], A.bb[2]), Math.max(ch.bb[3], A.bb[3])];
+  }
+  G.chunks = chunkMap.map((m) => [...m.values()]);
+  // island drop shadow, blurred once into a small image
+  {
+    const PX = 24, pad = 2.5, lb = G.landBox, b = [lb[0] - pad, lb[1] - pad, lb[2] + pad, lb[3] + pad];
+    const sc = document.createElement('canvas'); sc.width = Math.ceil((b[2] - b[0]) * PX); sc.height = Math.ceil((b[3] - b[1]) * PX);
+    const c = sc.getContext('2d');
+    c.setTransform(PX, 0, 0, -PX, -b[0] * PX, b[3] * PX);
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    if ('filter' in c) { c.filter = 'blur(9px)'; c.fill(G.land); }
+    else { c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 18; c.fill(G.land); }
+    G.shadow = sc; G.shadowBox = b;
+  }
   G.NX = Float64Array.from(NX); G.NY = Float64Array.from(NY);
   G.adj = Array.from({ length: NX.length }, () => []);
   G.arcs.forEach((A, i) => { G.adj[A.a].push(i); if (A.b !== A.a) G.adj[A.b].push(i); });
@@ -674,8 +1044,22 @@ function build() {
   // POIs in world coords
   POIS.forEach((p) => { [p.x, p.y] = ll2w(p.lon, p.lat); p.img = blipImage(p.icon, p.color); });
   G.seaLabels = SEA_LABELS.map(([t, lon, lat, r]) => [t, ...ll2w(lon, lat), r]);
-  buildSearchIndex();
 }
+// Split polylines into short pieces grouped by 1.5 km cells, so a redraw strokes (and dashes) only what is in view.
+function chunked(polys, CH = 1.5, maxPts = 48) {
+  const m = new Map();
+  for (const f of polys) {
+    for (let i0 = 0; i0 < f.length - 2; i0 += (maxPts - 1) * 2) {
+      const piece = f.subarray(i0, Math.min(f.length, i0 + maxPts * 2));
+      const bb = bbox(piece), key = Math.floor((bb[0] + bb[2]) / 2 / CH) * 1000 + Math.floor((bb[1] + bb[3]) / 2 / CH);
+      let ch = m.get(key); if (!ch) m.set(key, ch = { path: new Path2D(), bb: [Infinity, Infinity, -Infinity, -Infinity] });
+      addLine(ch.path, piece, false);
+      ch.bb = [Math.min(ch.bb[0], bb[0]), Math.min(ch.bb[1], bb[1]), Math.max(ch.bb[2], bb[2]), Math.max(ch.bb[3], bb[3])];
+    }
+  }
+  return [...m.values()];
+}
+function strokeChunks(c, chunks, vb) { for (const ch of chunks) if (boxHit(ch.bb, vb)) c.stroke(ch.path); }
 function pointAt(A, d) {
   const f = A.f, cum = A.cum; d = clamp(d, 0, A.len);
   let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
@@ -693,6 +1077,47 @@ function subline(A, d0, d1) {
 
 // ------------------------------------------------------------------ blip images
 const imgCache = new Map();
+const CAT_IMG = {};
+function catImage(k) {
+  if (CAT_IMG[k]) return CAT_IMG[k];
+  const C_ = CATS[k], g = C_.g.replace(/\{bg\}/g, C_.color);
+  // shadow is baked into the image so drawing needs no live blur
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="39" r="31" fill="rgba(0,0,0,.32)"/><circle cx="36" cy="36" r="30" fill="#fff"/><circle cx="36" cy="36" r="25.5" fill="${C_.color}"/><g transform="translate(36 36) scale(.36) translate(-50 -50)">${g}</g></svg>`;
+  const img = new Image(); img.onload = () => { baseDirty = true; needFrame = true; };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  return (CAT_IMG[k] = img);
+}
+// Icons are SVG images; drawing SVG into a canvas re-rasterises it every time, so each icon is
+// rasterised once per on-screen size into a small bitmap and reused.
+function sprite(img, size, shadow = false) {
+  if (!img.complete || !img.naturalWidth) return null;
+  const px = Math.round(size * DPR), key = px + (shadow ? 's' : '');
+  const m = img._sp || (img._sp = new Map());
+  let cv = m.get(key);
+  if (!cv) {
+    const pad = shadow ? Math.round(DPR * 2) : 0;
+    cv = document.createElement('canvas'); cv.width = px + pad; cv.height = px + pad * 2;
+    const g = cv.getContext('2d');
+    if (shadow) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(cv.width / 2, px / 2 + pad * 1.6, px / 2 * .96, 0, 7); g.fill(); }
+    g.drawImage(img, pad / 2, pad / 2, px, px);
+    m.set(key, cv);
+  }
+  return cv;
+}
+function buildPlaces(P) {
+  G.places = [];
+  if (!P) return;
+  const cats = P.cats;
+  for (const [ci, name, xm, ym, road] of P.items) {
+    const c = cats[ci]; if (!CATS[c]) continue;
+    // deterministic shuffle so overlap culling shows a mix of categories, stable across zooms
+    let h = (xm * 73856093) ^ (ym * 19349663); h = ((h >>> 0) % 10007) / 10007;
+    G.places.push({ c, n: name, x: xm / 1000, y: ym / 1000, road, h });
+  }
+  G.places.sort((a, b) => a.h - b.h);
+  G.placeCount = {}; for (const p of G.places) G.placeCount[p.c] = (G.placeCount[p.c] || 0) + 1;
+  CAT_KEYS.forEach(catImage);
+}
 function blipImage(icon, bg, ring = '#fff') {
   const key = icon + bg + ring; if (imgCache.has(key)) return imgCache.get(key);
   const g = ICON[icon].replace(/\{bg\}/g, bg);
@@ -716,6 +1141,8 @@ function makePatterns() {
   d.strokeStyle = 'rgba(44,120,150,.38)'; d.lineWidth = 2;
   d.beginPath(); d.moveTo(0, 23); d.quadraticCurveTo(22, 9, 45, 23); d.quadraticCurveTo(68, 37, 90, 23); d.stroke();
   wavePat = ctx.createPattern(w, 'repeat');
+  base.style.backgroundImage = `url(${w.toDataURL()})`;
+  document.body.style.background = `radial-gradient(circle at 45% 50%, ${C.seaA}, ${C.seaB} 80%)`;
 }
 
 // ------------------------------------------------------------------ base map render
@@ -729,35 +1156,55 @@ function roadW(cls, s) {
   const L = T[T.length - 1]; return [L[1], L[2]];
 }
 function drawBase() {
+  const w0 = W, h0 = H; W += 2 * M; H += 2 * M; // render the oversized view, centred on the camera
+  try { paintBase(); } finally { W = w0; H = h0; }
+  baseCam = { x: cam.x, y: cam.y, s: cam.s };
+}
+function paintBase() {
   const c = bctx, s = cam.s, px = 1 / s;
   screenT(c);
   // sea
-  const g = c.createRadialGradient(W * .45, H * .5, 0, W * .45, H * .5, Math.max(W, H) * .8);
-  g.addColorStop(0, C.seaA); g.addColorStop(1, C.seaB);
-  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  // sea: the page background (gradient) and the canvas' own CSS background (waves) show through,
+  // so the canvas only clears here instead of filling ~10M pixels every redraw
+  c.clearRect(0, 0, W, H);
   const [ox, oy] = toScreen(0, 0);
-  wavePat.setTransform(new DOMMatrix([1, 0, 0, 1, ox % 90, oy % 46]));
-  c.fillStyle = wavePat; c.fillRect(0, 0, W, H);
+  base.style.backgroundPosition = `${(ox % 90).toFixed(1)}px ${(oy % 46).toFixed(1)}px`;
   if (!D) return;
 
   worldT(c);
   c.lineJoin = 'round'; c.lineCap = 'round';
+  const vbAll = viewBox(20);
+  // when the whole view is inland, the coast (shelf, shadow, beach) is off screen: skip it
+  const inland = s > 250 && [[vbAll[0], vbAll[1]], [vbAll[2], vbAll[1]], [vbAll[0], vbAll[3]], [vbAll[2], vbAll[3]], [(vbAll[0] + vbAll[2]) / 2, vbAll[1]], [(vbAll[0] + vbAll[2]) / 2, vbAll[3]], [vbAll[0], (vbAll[1] + vbAll[3]) / 2], [vbAll[2], (vbAll[1] + vbAll[3]) / 2]]
+    .every(([x, y]) => inPoly(G.landRing, x, y));
+  if (!inland) {
   // shelf + shadow + beach
   c.strokeStyle = C.shelf; c.globalAlpha = .18; c.lineWidth = Math.max(1, 26 * px); c.stroke(G.land);
   c.strokeStyle = C.shelf2; c.globalAlpha = .25; c.lineWidth = Math.max(.45, 12 * px); c.stroke(G.land);
   c.globalAlpha = 1;
-  c.save(); c.shadowColor = 'rgba(0,0,0,.55)'; c.shadowBlur = 26 * DPR; c.shadowOffsetX = 8 * DPR; c.shadowOffsetY = 14 * DPR;
-  c.fillStyle = C.sand; c.fill(G.land); c.restore();
+  if (G.shadow) { // pre-blurred island shadow, drawn as an image (no live blur)
+    const b = G.shadowBox;
+    c.setTransform(DPR * s, 0, 0, DPR * s, DPR * (W / 2 - cam.x * s + 8), DPR * (H / 2 + cam.y * s + 14));
+    c.drawImage(G.shadow, b[0], -b[3], b[2] - b[0], b[3] - b[1]);
+    worldT(c);
+  }
+  c.fillStyle = C.sand; c.fill(G.land);
   c.strokeStyle = C.sand; c.lineWidth = Math.max(.18, 8 * px); c.stroke(G.land);
   c.strokeStyle = C.sandLine; c.globalAlpha = .9; c.lineWidth = Math.max(.04, 2 * px); c.stroke(G.land); c.globalAlpha = 1;
+  }
 
-  c.save(); c.clip(G.land);
+  c.save(); if (!inland) c.clip(G.land);
   // terrain raster (drawn with an unflipped transform)
   if (terrainImg && terrainImg.complete) {
     const T = D.terrain;
     c.setTransform(DPR * s, 0, 0, DPR * s, DPR * (W / 2 - cam.x * s), DPR * (H / 2 + cam.y * s));
-    c.imageSmoothingQuality = 'high';
-    c.drawImage(terrainImg, T.x0, -T.y1, T.x1 - T.x0, T.y1 - T.y0);
+    // draw only the visible part of the raster (cheaper than scaling the whole image)
+    const iw = terrainImg.naturalWidth, ih = terrainImg.naturalHeight, kx = iw / (T.x1 - T.x0), ky = ih / (T.y1 - T.y0);
+    const x0 = Math.max(T.x0, vbAll[0]), x1 = Math.min(T.x1, vbAll[2]), y0 = Math.max(T.y0, vbAll[1]), y1 = Math.min(T.y1, vbAll[3]);
+    if (x1 > x0 && y1 > y0) {
+      c.imageSmoothingQuality = s > 400 ? 'low' : 'medium';
+      c.drawImage(terrainImg, (x0 - T.x0) * kx, (T.y1 - y1) * ky, (x1 - x0) * kx, (y1 - y0) * ky, x0, -y1, x1 - x0, y1 - y0);
+    }
     worldT(c);
   }
   // districts
@@ -766,7 +1213,7 @@ function drawBase() {
   roofPat.setTransform(new DOMMatrix([1 / s, 0, 0, -1 / s, 0, 0]).scale(s > 900 ? 1.6 : 1));
   c.fillStyle = roofPat; c.fill(G.ztlPath); c.globalAlpha = 1;
   c.strokeStyle = '#fff7e0'; c.globalAlpha = .8; c.lineWidth = 2.6 * px; c.setLineDash([2 * px, 9 * px]);
-  for (const z of G.zones) c.stroke(z.path);
+  strokeChunks(c, G.zoneEdges, vbAll);
   c.setLineDash([]); c.globalAlpha = 1;
   // parks and special areas
   c.fillStyle = C.park; c.fill(G.parks); c.strokeStyle = C.park2; c.lineWidth = 2 * px; c.stroke(G.parks);
@@ -777,7 +1224,7 @@ function drawBase() {
   c.lineCap = 'butt'; c.strokeStyle = '#3b3d44'; c.lineWidth = Math.max(4 * px, .06); c.beginPath(); c.moveTo(R[0], R[1]); c.lineTo(R[2], R[3]); c.stroke();
   c.strokeStyle = '#fff'; c.lineWidth = Math.max(1 * px, .006); c.setLineDash([Math.max(6 * px, .045), Math.max(5 * px, .035)]); c.stroke(); c.setLineDash([]); c.lineCap = 'round';
   // hills
-  c.strokeStyle = '#2f5a2a'; c.globalAlpha = .22; c.lineWidth = 1.2 * px; c.stroke(G.contour); c.lineWidth = 2 * px; c.stroke(G.contourMajor); c.globalAlpha = 1;
+  c.strokeStyle = '#2f5a2a'; c.globalAlpha = .22; c.lineWidth = 1.2 * px; strokeChunks(c, G.contour, vbAll); c.lineWidth = 2 * px; strokeChunks(c, G.contourMajor, vbAll); c.globalAlpha = 1;
   // water
   const river = (p, km, minPx) => {
     const w = Math.max(minPx, km * s);
@@ -787,18 +1234,19 @@ function drawBase() {
   river(G.reno, .11, 3.5); river(G.savena, .07, 2.5); river(G.canal, .035, 1.6);
   if (s > 300) river(G.aposa, .02, 1.5);
   // rail
-  c.strokeStyle = C.rail; c.globalAlpha = .8; c.lineWidth = clamp(.022 * s, 1.2, 6) * px; c.stroke(G.rail);
-  if (s > 500) { c.strokeStyle = '#d9d4c4'; c.lineWidth = clamp(.012 * s, 1, 3) * px; c.setLineDash([6 * px, 6 * px]); c.stroke(G.rail); c.setLineDash([]); }
+  c.strokeStyle = C.rail; c.globalAlpha = .8; c.lineWidth = clamp(.022 * s, 1.2, 6) * px; strokeChunks(c, G.rail, vbAll);
+  if (s > 500) { c.strokeStyle = '#d9d4c4'; c.lineWidth = clamp(.012 * s, 1, 3) * px; c.setLineDash([6 * px, 6 * px]); strokeChunks(c, G.rail, vbAll); c.setLineDash([]); }
   c.globalAlpha = 1;
-  // roads: all casings, then all fills
+  // roads: all casings, then all fills; only the chunks in view
+  const vb = viewBox(20);
   for (let k = 0; k < 4; k++) {
     const [wc] = roadW(k, s); c.strokeStyle = ROAD[k][0]; c.globalAlpha = k === 0 ? (s < 120 ? .45 : .7) : 1;
-    c.lineWidth = wc * px; c.stroke(G.roads[k]);
+    c.lineWidth = wc * px; for (const ch of G.chunks[k]) if (boxHit(ch.bb, vb)) c.stroke(ch.path);
   }
   c.globalAlpha = 1;
   for (let k = 0; k < 4; k++) {
     const [, wf] = roadW(k, s); c.strokeStyle = ROAD[k][1]; c.globalAlpha = k === 0 && s < 80 ? .75 : 1;
-    c.lineWidth = wf * px; c.stroke(G.roads[k]);
+    c.lineWidth = wf * px; for (const ch of G.chunks[k]) if (boxHit(ch.bb, vb)) c.stroke(ch.path);
   }
   c.globalAlpha = 1;
   c.restore();
@@ -806,12 +1254,18 @@ function drawBase() {
   // ---------------- labels (screen space)
   screenT(c);
   c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
-  const boxes = [];
-  const free = (b) => { for (const o of boxes) if (b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]) return false; boxes.push(b); return true; };
+  // label/icon collision on a 64 px grid (constant time per check instead of scanning every placed box)
+  const GS = 64, grid = new Map();
+  const cells = (b, fn) => { for (let gx = Math.floor(b[0] / GS); gx <= Math.floor(b[2] / GS); gx++) for (let gy = Math.floor(b[1] / GS); gy <= Math.floor(b[3] / GS); gy++) if (fn((gx + 2048) * 8192 + gy + 2048) === false) return false; return true; };
+  const reserve = (b) => cells(b, (k) => { let l = grid.get(k); if (!l) grid.set(k, l = []); l.push(b); });
+  const free = (b) => {
+    const ok = cells(b, (k) => { const l = grid.get(k); if (l) for (const o of l) if (b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]) return false; });
+    if (ok) reserve(b); return ok;
+  };
   // POI blips reserve space first (drawn last so they sit on top)
   const r = clamp(8 + s * .02, 11, 17);
   const shownPois = POIS.filter((p) => p.major || s >= 110);
-  const poiScreens = shownPois.map((p) => { const [x, y] = toScreen(p.x, p.y); boxes.push([x - r, y - r, x + r, y + r]); return [p, x, y]; });
+  const poiScreens = shownPois.map((p) => { const [x, y] = toScreen(p.x, p.y); reserve([x - r, y - r, x + r, y + r]); return [p, x, y]; });
   // sea labels
   c.font = `italic 400 ${clamp(s * .35, 13, 22)}px "Barlow Condensed", sans-serif`;
   c.fillStyle = 'rgba(127,195,216,.85)';
@@ -841,11 +1295,29 @@ function drawBase() {
     const w = c.measureText('OLD TOWN').width; if (free([sx - w / 2, sy - fs / 2, sx + w / 2, sy + fs / 2])) halo(c, 'OLD TOWN', sx, sy, '#fff', '#5a1a10', fs * .28, .06);
   }
   // street names along the road
+  // everyday places: category icons, culled by zoom, filters and overlap
+  G.drawn = [];
+  if (G.places && G.places.length && s >= PLACE_MIN_S) {
+    const pr = placeR(s), ds = pr * 2 * 72 / 60;
+    const v = viewBox(0), showNames = s >= 1300;
+    const nfs = 13; c.font = `700 ${nfs}px "Barlow Condensed", sans-serif`;
+    for (const p of G.places) {
+      if (!catOn[p.c] || p.x < v[0] || p.x > v[2] || p.y < v[1] || p.y > v[3]) continue;
+      const [x, y] = toScreen(p.x, p.y);
+      if (!free([x - pr - 1, y - pr - 1, x + pr + 1, y + pr + 1])) continue;
+      const sp = sprite(CAT_IMG[p.c], ds); if (sp) c.drawImage(sp, x - ds / 2, y - ds / 2, ds, ds);
+      G.drawn.push(p);
+      if (G.drawn.length >= 420) break; // cap per redraw; overlap culling already hides most at this density
+      if (showNames && p.n) {
+        let w = p.w; if (w === undefined) w = p.w = c.measureText(p.n).width + 4;
+        const lx = x + pr + 4 + w / 2;
+        if (free([lx - w / 2, y - nfs / 2, lx + w / 2, y + nfs / 2])) halo(c, p.n, lx, y, '#fff', 'rgba(20,20,28,.9)', 3.4);
+      }
+    }
+  }
   if (s >= 240) streetLabels(c, free);
   // POI blips + labels
-  c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 5 * DPR; c.shadowOffsetY = 2 * DPR;
-  for (const [p, x, y] of poiScreens) if (p.img.complete) c.drawImage(p.img, x - r, y - r, 2 * r, 2 * r);
-  c.restore();
+  for (const [p, x, y] of poiScreens) { const sp = sprite(p.img, 2 * r, true); if (sp) c.drawImage(sp, x - r - 1, y - r - 1, 2 * r + 2, 2 * r + 4); }
   const lfs = clamp(10 + s * .008, 12, 17);
   c.font = `700 ${lfs}px "Barlow Condensed", sans-serif`;
   for (const [p, x, y] of poiScreens) {
@@ -904,10 +1376,31 @@ function streetLabels(c, free) {
 
 // ------------------------------------------------------------------ overlay (route, markers, nav car)
 const state = { from: null, to: null, mode: 'drive', avoidZtl: true, route: null, nav: null, pick: null, hover: null };
+function placeBase() {
+  const b = baseCam, k = cam.s / b.s;
+  const tx = W / 2 - cam.x * cam.s - k * (M + W / 2) + b.x * cam.s;
+  const ty = H / 2 + cam.y * cam.s - k * (M + H / 2) - b.y * cam.s;
+  return { k, tx, ty, covered: tx <= .5 && ty <= .5 && tx + k * (W + 2 * M) >= W - .5 && ty + k * (H + 2 * M) >= H - .5 };
+}
+let lastT = '';
+function updateBase(now) {
+  let p = baseCam && placeBase();
+  const still = !drag && !pinch && !flight;
+  const following = !!(state.nav && state.nav.follow);
+  // the GPS drive glides the camera every frame: redraw for zoom changes or when leaving the margin only
+  const settledZoom = still && (now - lastMove > 220 || following);
+  const settledPan = still && now - lastMove > 220 && !following;
+  if (!baseCam || baseDirty || !p.covered || p.k < .45 || p.k > 2.6 ||
+      (settledZoom && Math.abs(p.k - 1) > 1e-3) ||
+      (settledPan && (Math.abs(p.tx + M) > .5 || Math.abs(p.ty + M) > .5))) {
+    drawBase(); baseDirty = false; p = placeBase();
+  }
+  const t = `translate(${p.tx.toFixed(2)}px,${p.ty.toFixed(2)}px) scale(${p.k.toFixed(5)})`;
+  if (t !== lastT) { base.style.transform = t; lastT = t; }
+}
 function drawFrame(now) {
-  if (baseDirty) { drawBase(); baseDirty = false; }
+  updateBase(now);
   screenT(ctx); ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(base, 0, 0, W, H);
   const s = cam.s, px = 1 / s;
   const R = state.route;
   if (R) {
@@ -915,8 +1408,9 @@ function drawFrame(now) {
     const rw = clamp(4 + s * .006, 6, 15);
     // connectors from the exact points to the road
     ctx.setLineDash([2 * px, 6 * px]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5 * px; ctx.stroke(R.connPath); ctx.setLineDash([]);
-    ctx.save(); ctx.shadowColor = 'rgba(255,63,164,.9)'; ctx.shadowBlur = 14 * DPR;
-    ctx.strokeStyle = C.routeGlow; ctx.globalAlpha = .55; ctx.lineWidth = (rw + 10) * px; ctx.stroke(R.path); ctx.restore();
+    // soft glow from two wide translucent strokes (no live blur)
+    ctx.strokeStyle = C.route; ctx.globalAlpha = .16; ctx.lineWidth = (rw + 20) * px; ctx.stroke(R.path);
+    ctx.strokeStyle = C.routeGlow; ctx.globalAlpha = .45; ctx.lineWidth = (rw + 10) * px; ctx.stroke(R.path);
     ctx.globalAlpha = 1;
     ctx.strokeStyle = C.routeCase; ctx.lineWidth = (rw + 3.5) * px; ctx.stroke(R.path);
     ctx.strokeStyle = C.route; ctx.lineWidth = rw * px; ctx.stroke(R.path);
@@ -932,6 +1426,7 @@ function drawFrame(now) {
   if (state.to) drawDest(...toScreen(state.to.x, state.to.y), pulse);
   if (state.nav) drawCar(now);
   updatePopup();
+  if (BW.onFrame) BW.onFrame();
 }
 function drawStart(x, y) {
   const c = ctx; c.save();
@@ -974,6 +1469,11 @@ function buildSearchIndex() {
     const label = titleCase(name);
     INDEX.push({ type: 'street', label, sub: '', key: norm(label), x: best[0], y: best[1], len: L });
   }
+  for (const p of G.places || []) {
+    if (!p.n) continue;
+    const C_ = CATS[p.c];
+    INDEX.push({ type: 'place', label: p.n, sub: `${C_.name}${p.road ? ' · ' + p.road : ''}`, key: norm(p.n + ' ' + C_.alias), x: p.x, y: p.y, cat: p.c });
+  }
   for (const e of INDEX) e.tokens = e.key.split(' ');
   // old-town districts get the old-town label point
   const ot = ll2w(11.3428, 44.4945);
@@ -1000,10 +1500,11 @@ function search(q) {
     if (e.type === 'zone') score += 6;
     if (e.type === 'street') score += Math.min(4, (e.len || 0) * 1.5);
     if (e.key.startsWith(qt.join(' '))) score += 6;
+    if (e.type === 'place') score -= Math.min(6, Math.hypot(e.x - cam.x, e.y - cam.y) * .6); // nearer places first
     res.push([score - e.label.length * .02, e]);
   }
   res.sort((a, b) => b[0] - a[0]);
-  return res.slice(0, 7).map((r) => r[1]);
+  return res.slice(0, 8).map((r) => r[1]);
 }
 
 // ------------------------------------------------------------------ snapping + routing
@@ -1206,6 +1707,7 @@ function openSuggest(input) {
     const li = document.createElement('li'); li.setAttribute('role', 'option'); li.id = 'sg' + i;
     let ico;
     if (e.act) ico = '<span class="ico act"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span>';
+    else if (e.type === 'place') ico = `<span class="ico"><img alt="" src="${CAT_IMG[e.cat].src}"></span>`;
     else if (e.type === 'poi') ico = `<span class="ico"><img alt="" src="${e.poi.img.dataset.src}"></span>`;
     else if (e.type === 'zone') ico = '<span class="ico zone"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 20V9l8-5 8 5v11h-5v-6H9v6z"/></svg></span>';
     else ico = '<span class="ico street"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 3 5 21M16 3l3 18M12 4v3M12 11v3M12 18v2"/></svg></span>';
@@ -1301,6 +1803,13 @@ function onMapClick(sx, sy) {
     const [px, py] = toScreen(p.x, p.y);
     if (Math.hypot(px - sx, py - sy) <= r) { showPopup(p.x, p.y, p.name, `Landmark · ${districtOf(p.x, p.y)}`, true); return; }
   }
+  if (G.drawn) {
+    const pr = placeR(cam.s) + 4;
+    for (let i = G.drawn.length - 1; i >= 0; i--) {
+      const p = G.drawn[i]; const [px, py] = toScreen(p.x, p.y);
+      if (Math.hypot(px - sx, py - sy) <= pr) { showPopup(p.x, p.y, p.n || CATS[p.c].name, `${CATS[p.c].name}${p.road ? ' · ' + p.road : ''}`, true); return; }
+    }
+  }
   if (!inLand) { hidePopup(); return; }
   const sn = snap(x, y, 'walk');
   const name = sn && sn.d < .15 ? G.arcs[sn.arc].label : 'Dropped pin';
@@ -1361,6 +1870,41 @@ $('#zin').addEventListener('click', () => flyTo(cam.x, cam.y, cam.s * 2, 350));
 $('#zout').addEventListener('click', () => flyTo(cam.x, cam.y, cam.s / 2, 350));
 $('#fit').addEventListener('click', () => state.route ? fitBox(state.route.bb) : fitCity());
 $('#compass').addEventListener('click', fitCity);
+
+// ------------------------------------------------------------------ map icon legend + filters
+const catOn = {};
+(() => {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('bw-cats') || 'null'); } catch (_) { /* storage blocked */ }
+  CAT_KEYS.forEach((k) => { catOn[k] = saved && k in saved ? !!saved[k] : true; });
+})();
+function saveCats() { try { localStorage.setItem('bw-cats', JSON.stringify(catOn)); } catch (_) { /* storage blocked */ } }
+function renderLegend() {
+  const list = $('#legendList'); list.innerHTML = '';
+  const groups = [...new Set(CAT_KEYS.map((k) => CATS[k].group))];
+  for (const gname of groups) {
+    const h = document.createElement('div'); h.className = 'lg-h'; h.textContent = gname.toUpperCase(); list.appendChild(h);
+    const box = document.createElement('div'); box.className = 'lg-grid'; list.appendChild(box);
+    for (const k of CAT_KEYS.filter((k) => CATS[k].group === gname)) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'lg-item';
+      b.setAttribute('aria-pressed', String(catOn[k]));
+      b.innerHTML = `<img alt="" src="${catImage(k).src}"><span class="lg-n">${CATS[k].name}</span><span class="lg-c">${(G.placeCount || {})[k] || 0}</span>`;
+      b.addEventListener('click', () => { catOn[k] = !catOn[k]; b.setAttribute('aria-pressed', String(catOn[k])); saveCats(); baseDirty = true; needFrame = true; });
+      box.appendChild(b);
+    }
+  }
+  updateLegendHint();
+}
+function updateLegendHint() { const el = $('#legendHint'); if (el) el.hidden = cam.s >= PLACE_MIN_S; }
+function setAllCats(v) { CAT_KEYS.forEach((k) => { catOn[k] = v; }); saveCats(); renderLegend(); baseDirty = true; needFrame = true; }
+$('#legendBtn').addEventListener('click', () => {
+  const L = $('#legend'); L.hidden = !L.hidden; $('#legendBtn').setAttribute('aria-expanded', String(!L.hidden));
+  if (!L.hidden) renderLegend();
+});
+$('#legendClose').addEventListener('click', () => { $('#legend').hidden = true; $('#legendBtn').setAttribute('aria-expanded', 'false'); });
+$('#lgAll').addEventListener('click', () => setAllCats(true));
+$('#lgNone').addEventListener('click', () => setAllCats(false));
+$('#legendZoom').addEventListener('click', () => { const R_ = state.route; const p = R_ ? R_.pts[R_.pts.length - 1] : [cam.x, cam.y]; flyTo(p[0], p[1], 900, 700); });
 function fitCity() { fitBox(G.landBox, 900); }
 window.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
@@ -1442,11 +1986,13 @@ function updateScale() {
 
 // ------------------------------------------------------------------ loop
 let lastS = 0;
+let lastDraw = 0;
 function frame(now) {
   stepFlight(now); stepNav(now);
-  const animate = !!state.route || !!state.to || !!state.nav || !!flight;
-  if (needFrame || animate) { drawFrame(now); needFrame = false; }
-  if (cam.s !== lastS) { updateScale(); lastS = cam.s; }
+  const moving = needFrame || !!flight || !!state.nav;
+  const ambient = (!!state.route || !!state.to) && !reduceMotion && now - lastDraw > 33; // route dots + pulse at 30 fps
+  if (moving || ambient || baseDirty || (baseCam && now - lastMove > 220 && now - lastMove < 500)) { drawFrame(now); needFrame = false; lastDraw = now; }
+  if (cam.s !== lastS) { updateScale(); updateLegendHint(); lastS = cam.s; }
   requestAnimationFrame(frame);
 }
 
@@ -1455,7 +2001,9 @@ async function boot() {
   resize(); makePatterns();
   terrainImg = new Image(); terrainImg.onload = () => { baseDirty = true; needFrame = true; }; terrainImg.src = TERRAIN_URL;
   const json = window.BOLOGNA_DATA || await (await fetch(DATA_URL)).json();
-  D = json; build();
+  D = json;
+  const places = window.BOLOGNA_PLACES || await fetch(PLACES_URL).then((r) => r.json()).catch(() => null);
+  build(); buildPlaces(places); buildSearchIndex();
   try { await Promise.all(['400 20px Bungee', '700 20px Oswald', '700 20px "Barlow Condensed"', '400 20px "Barlow Condensed"', '400 20px Pacifico'].map((f) => document.fonts.load(f))); } catch (_) { /* fall back to system fonts */ }
   widthCache.clear();
   const [x0, y0, x1, y1] = G.landBox; setCam((x0 + x1) / 2, (y0 + y1) / 2, Math.min(W / (x1 - x0), H / (y1 - y0)) * .9);
@@ -1464,10 +2012,427 @@ async function boot() {
   runMission(MISSIONS[0]);
   setTimeout(() => $('#loading').classList.add('done'), 150);
 }
+// hooks for src/missions.js (crew missions + rewards), which runs after this file
+const BW = window.BW = {
+  cam, toScreen, toWorld, flyTo, fitBox, setEnd, setMode, toast, state, CATS,
+  get G() { return G; }, get W() { return W; }, get H() { return H; },
+  redraw() { needFrame = true; }, onFrame: null,
+};
 boot().catch((err) => {
   console.error(err);
   $('#loading .ls').textContent = 'COULD NOT LOAD THE MAP DATA. SERVE THIS FOLDER OVER HTTP (SEE README).';
 });
+})();
+
+/* Bologna Waypoint: crew missions and rewards.
+   People post co-op plans ("gym at 18:30, need a spotter") at public venues; others accept and form a crew.
+   Uses the hooks app.js puts on window.BW. Blips are a few DOM nodes moved with transforms in BW.onFrame,
+   so nothing here adds work to the map's canvas redraws. Missions, players and offers are sample data. */
+(() => {
+'use strict';
+const BW = window.BW;
+if (!BW) return;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (n) => n.toLocaleString('en');
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const CAT = (c) => BW.CATS[c];
+const glyph = (c, bg) => CAT(c).g.replace(/\{bg\}/g, bg || CAT(c).color);
+const icon = (c, cls = 'cwi') => `<span class="${cls}" style="background:${CAT(c).color}"><svg viewBox="0 0 100 100">${glyph(c)}</svg></span>`;
+const GROUPS = { all: ['All'], food: ['Food', ['food', 'pizza', 'burger', 'gelato']], drinks: ['Drinks & coffee', ['bar', 'cafe']], fit: ['Fitness', ['gym']], culture: ['Culture', ['museum', 'cinema']], night: ['Night', ['club']] };
+
+// ------------------------------------------------------------------ sample missions (fictional hosts, real venues)
+// x, y in km from the map centre, as in G.places
+const M = [
+  { id: 'gym', cat: 'gym', title: 'Leg day, need a spotter', place: 'Performance Fitness Club', street: 'Via Nazario Sauro', x: .621, y: .868, when: 'Today 18:30', mins: 70, crew: [1, 2], xp: 120,
+    host: { n: 'Marco', i: 'MR', c: '#e0452f', lvl: 12, rank: 'Regular', rep: 4.9, done: 38, show: 97, ver: true },
+    tags: ['Beginner friendly', 'Weekly'], desc: 'Squats and lunges, about an hour. I can show you the machines if you are new. Recurring every Tuesday if we click.', badge: 'Gym Rat', bp: [3, 5] },
+  { id: 'trattoria', cat: 'food', title: 'Tortellini dinner in a medieval tower', place: 'Trattoria Da Me nella torre', street: "Corte de' Galluzzi", x: .847, y: .375, when: 'Today 20:30', mins: 190, crew: [2, 4], xp: 110,
+    host: { n: 'Giulia', i: 'GB', c: '#f08a24', lvl: 9, rank: 'Local', rep: 4.8, done: 21, show: 100, ver: true },
+    tags: ['Split the bill', 'IT / EN'], desc: 'Booked a table for four. Classic Bolognese menu, around 30 euro each. Good for people new in town.', badge: 'Tortellini Hunter', bp: [2, 5] },
+  { id: 'aperitivo', cat: 'bar', title: 'Aperitivo crew after work', place: 'Enoteca Giacchero', street: 'Corte Isolani', x: 1.343, y: .461, when: 'Today 19:00', mins: 40, crew: [3, 6], xp: 90,
+    host: { n: 'Luca', i: 'LF', c: '#c2367a', lvl: 15, rank: 'Crew Captain', rep: 4.7, done: 64, show: 95, ver: true },
+    tags: ['Open crew', 'Wine'], desc: 'A glass of Pignoletto and some taglieri under the porticoes. Drop in any time before 20:30.', badge: 'Aperitivo Pro', bp: [4, 5] },
+  { id: 'gelato', cat: 'gelato', title: 'Gelato walk to Piazza Maggiore', place: 'Cremeria Cavour', street: 'Piazza Cavour', x: 1.011, y: .292, when: 'Today 17:45', mins: 25, crew: [1, 4], xp: 70,
+    host: { n: 'Sara', i: 'SC', c: '#ff6fae', lvl: 6, rank: 'Local', rep: 5.0, done: 9, show: 100, ver: true },
+    tags: ['Women only', 'Chill'], women: true, desc: 'Gelato, then a slow walk to the Neptune fountain. Women only. New to Bologna is welcome.', badge: 'Sweet Tooth', bp: [1, 5] },
+  { id: 'cinema', cat: 'cinema', title: 'Original-language movie night', place: 'Cinema Modernissimo', street: 'Piazza Re Enzo', x: .989, y: .669, when: 'Today 21:15', mins: 235, crew: [1, 3], xp: 80,
+    host: { n: 'Elif', i: 'EK', c: '#b3122e', lvl: 4, rank: 'Newcomer', rep: 4.6, done: 5, show: 100, ver: false },
+    tags: ['Subtitled', 'Students'], desc: 'The Cineteca shows films in original language. Tickets are about 7 euro, coffee after if we like it.', badge: 'Film Buff', bp: [0, 5] },
+  { id: 'museum', cat: 'museum', title: 'Sunday museum hunt + language swap', place: 'Museo internazionale della musica', street: 'Strada Maggiore', x: 1.489, y: .486, when: 'Sun 11:00', mins: 2600, crew: [2, 5], xp: 100,
+    host: { n: 'Tom', i: 'TW', c: '#a06a1f', lvl: 11, rank: 'Regular', rep: 4.9, done: 30, show: 98, ver: true },
+    tags: ['Free entry Sunday', 'IT ⇄ EN'], desc: 'Half the time in Italian, half in English. Old instruments, Mozart manuscripts, then a coffee.', badge: 'Polyglot', bp: [1, 3] },
+  { id: 'coffee', cat: 'cafe', title: 'Study sprint + espresso', place: 'Caffè Terzi', street: 'Via Guglielmo Oberdan', x: 1.119, y: .757, when: 'Now', mins: 5, crew: [1, 3], xp: 60,
+    host: { n: 'Nadia', i: 'NB', c: '#8b5a3c', lvl: 8, rank: 'Local', rep: 4.8, done: 17, show: 96, ver: true },
+    tags: ['Instant', 'Quiet'], women: true, desc: 'Coffee, then two 50-minute study blocks at the university library. Women only.', badge: 'Bookworm', bp: [2, 5] },
+  { id: 'club', cat: 'club', title: 'Saturday night out crew', place: 'Soda Pops', street: 'Via Castel Tialto', x: 1.316, y: .648, when: 'Sat 23:30', mins: 4000, crew: [4, 6], xp: 130,
+    host: { n: 'Dario', i: 'DM', c: '#7b2ff7', lvl: 18, rank: 'Crew Captain', rep: 4.6, done: 82, show: 93, ver: true },
+    tags: ['18+', 'ID-verified only'], night: true, desc: 'Meet at the bar first, go in together, leave together. ID-verified players only for night missions.', badge: 'Night Owl', bp: [3, 5] },
+  { id: 'crawl', cat: 'burger', title: 'Quadrilatero food crawl, 3 stops', place: 'Il Forno', street: 'Via Pescherie Vecchie', x: 1.055, y: .546, when: 'Tomorrow 12:30', mins: 960, crew: [2, 5], xp: 160,
+    host: { n: 'Paolo', i: 'PV', c: '#e9a514', lvl: 14, rank: 'Regular', rep: 4.9, done: 41, show: 99, ver: true },
+    tags: ['Chain mission', 'Lunch'], desc: 'Focaccia at Il Forno, tigelle at Tigellino, then chocolate at Venchi. One small plate each, about 20 euro total.', badge: 'Market Runner', bp: [1, 5] },
+];
+
+// ------------------------------------------------------------------ player, saved per viewer
+const RANKS = [[1, 'Newcomer'], [5, 'Local'], [10, 'Regular'], [15, 'Crew Captain'], [25, 'Portico Legend']];
+const me = { lvl: 7, xp: 340, need: 500, wallet: 1240, pin: '#2f9ad6', title: null, owned: ['s1'], equipped: 's1', vouchers: [], phase: {}, posted: [] };
+try { Object.assign(me, JSON.parse(localStorage.getItem('bw-crew') || '{}')); } catch (_) { /* storage blocked */ }
+me.posted.forEach((m) => M.unshift(m));
+for (const m of M) if (me.phase[m.id] === 'done') m.bp[0] = Math.min(m.bp[0] + 1, m.bp[1]);
+function save() { try { localStorage.setItem('bw-crew', JSON.stringify(me)); } catch (_) { /* storage blocked */ } }
+function renderPlayer() {
+  $('#cwLvl').textContent = 'LV ' + me.lvl;
+  $('#cwXpT').textContent = `${me.xp} / ${me.need} XP`;
+  $('#cwRank').textContent = me.title || RANKS.filter((r) => me.lvl >= r[0]).pop()[1];
+  $('#cwXp').style.width = Math.min(100, me.xp / me.need * 100) + '%';
+  $('#cwWallet').textContent = fmt(me.wallet);
+  $('#cwAv').style.background = me.pin;
+}
+function gainXP(n) {
+  me.xp += n; me.wallet += n;
+  if (me.xp >= me.need) { me.xp -= me.need; me.lvl++; me.need = Math.round(me.need * 1.15 / 10) * 10; setTimeout(() => BW.toast('LEVEL UP', `You reached level ${me.lvl}`), 1900); }
+  save(); renderPlayer();
+}
+
+// ------------------------------------------------------------------ tabs
+const ui = { tab: 'route', group: 'all', verified: false, women: false, soon: false, sel: null };
+const crewEl = $('#crew'), body = $('#cwBody'), layer = $('#crewLayer');
+function setTab(t) {
+  if (t === 'rewards') { openRewards(); return; }
+  ui.tab = t;
+  document.querySelectorAll('.hudtabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  const crew = t === 'crew';
+  document.body.classList.toggle('crew-mode', crew);
+  crewEl.hidden = !crew;
+  const pop = $('#pop'); if (crew && pop) pop.hidden = true;
+  renderBoard(); renderBlips();
+  if (crew) fitMissions();
+}
+document.querySelectorAll('.hudtabs button').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+function fitMissions() {
+  const pts = M.filter(passes);
+  if (!pts.length) return;
+  const b = [Math.min(...pts.map((m) => m.x)), Math.min(...pts.map((m) => m.y)), Math.max(...pts.map((m) => m.x)), Math.max(...pts.map((m) => m.y))];
+  BW.fitBox([b[0] - .08, b[1] - .08, b[2] + .08, b[3] + .08], 800, 1600);
+}
+
+// ------------------------------------------------------------------ board
+const passes = (m) => (ui.group === 'all' || GROUPS[ui.group][1].includes(m.cat)) && (!ui.verified || m.host.ver) && (!ui.women || m.women) && (!ui.soon || m.mins <= 120);
+const slots = (m) => `<span class="slots">${Array.from({ length: m.crew[1] }, (_, i) => `<i class="${i < m.crew[0] ? '' : 'e'}"></i>`).join('')}</span>`;
+function renderBoard() {
+  if (ui.tab !== 'crew') return;
+  if (ui.sel) { renderDetail(); return; }
+  const vis = M.filter(passes);
+  body.innerHTML = `
+    <button class="btn-go cw-post" id="cwPost" type="button">+ POST A MISSION</button>
+    <div class="chips cw-chips" id="cwCats">${Object.entries(GROUPS).map(([k, [n]]) => `<button class="chip" type="button" data-g="${k}" aria-pressed="${k === ui.group}">${n}</button>`).join('')}</div>
+    <div class="cw-filters">
+      <label class="toggle"><input type="checkbox" id="cwfVer" ${ui.verified ? 'checked' : ''}><span class="sw"></span>Verified hosts</label>
+      <label class="toggle"><input type="checkbox" id="cwfWom" ${ui.women ? 'checked' : ''}><span class="sw"></span>Women-only</label>
+      <label class="toggle"><input type="checkbox" id="cwfSoon" ${ui.soon ? 'checked' : ''}><span class="sw"></span>Next 2 hours</label>
+    </div>
+    <div class="eyebrow">${vis.length} OPEN MISSIONS NEAR YOU</div>
+    <ul class="cw-list">${vis.length ? vis.map((m) => `
+      <li><button class="mc${m.mine ? ' mine' : ''}" type="button" data-id="${m.id}">
+        ${icon(m.cat)}<span class="t">${esc(m.title)}</span><span class="xp">+${m.xp} XP</span>
+        <span class="s"><span>${esc(m.place)} · ${esc(m.when)}</span>${slots(m)}${m.mine ? '<span class="pl r">Yours</span>' : ''}${me.phase[m.id] === 'joined' ? '<span class="pl r">Joined</span>' : ''}${m.women ? '<span class="pl w">Women only</span>' : ''}${m.host.ver ? '<span class="pl v">Verified</span>' : ''}${m.night ? '<span class="pl n">18+</span>' : ''}</span>
+      </button></li>`).join('') : '<li class="cw-empty">No missions match these filters. Post one and be the first.</li>'}</ul>
+    <div class="cw-note">Sample missions and players. Venues are real places on the map.</div>`;
+}
+body.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'cwPost') { openWiz(); return; }
+  if (b.dataset.g) { ui.group = b.dataset.g; renderBoard(); renderBlips(); return; }
+  if (b.classList.contains('mc')) { select(b.dataset.id); return; }
+  detailAction(b);
+});
+body.addEventListener('change', (e) => {
+  const k = { cwfVer: 'verified', cwfWom: 'women', cwfSoon: 'soon' }[e.target.id];
+  if (k) { ui[k] = e.target.checked; renderBoard(); renderBlips(); }
+});
+
+// ------------------------------------------------------------------ mission detail
+function select(id) {
+  const m = M.find((x) => x.id === id); if (!m) return;
+  if (ui.tab !== 'crew') setTab('crew');
+  ui.sel = id; renderDetail(); renderBlips();
+  flyToFree(m.x, m.y, Math.max(BW.cam.s, 1400));
+}
+// centre a point in the part of the map the panels leave free
+function flyToFree(x, y, s) {
+  const W = BW.W, H = BW.H, side = $('#side').getBoundingClientRect();
+  let cx = W / 2, cy = H / 2;
+  if (W <= 760) { const top = crewEl.hidden ? H : crewEl.getBoundingClientRect().top; cy = (side.bottom + top) / 2; }
+  else cx = (side.right + W - 80) / 2;
+  BW.flyTo(x - (cx - W / 2) / s, y + (cy - H / 2) / s, s, 700);
+}
+const avatar = (c, i, cls = 'cw-av') => `<div class="${cls}" style="background:${c}">${esc(i)}</div>`;
+function renderDetail() {
+  const m = M.find((x) => x.id === ui.sel); if (!m) { ui.sel = null; renderBoard(); return; }
+  const ph = me.phase[m.id] || 'open';
+  const crewRow = (you) => `<div class="crewrow">${avatar(m.host.c, m.host.i)}${Array.from({ length: Math.max(0, m.crew[0] - 1) }, (_, i) => avatar(['#2f9ad6', '#3fa86a', '#8e44c9', '#d1793f', '#5b56c9'][i % 5], ['AL', 'JK', 'RM', 'FS', 'BT'][i % 5])).join('')}${you ? '<div class="open you">YOU</div>' : ''}${Array.from({ length: Math.max(0, m.crew[1] - m.crew[0] - (you ? 1 : 0)) }, () => '<div class="open">+</div>').join('')}</div>`;
+  const ribbon = ph === 'done' ? ['MISSION COMPLETE', '#3fd17a'] : ph === 'joined' ? ['CREW LOCKED IN', 'var(--gold)'] : [m.mine ? 'YOUR MISSION' : CAT(m.cat).name.toUpperCase(), 'var(--pink)'];
+  let h = `<button class="cw-back" type="button" data-a="back">‹ ALL MISSIONS</button>
+    <div class="cw-head">${icon(m.cat)}<div><span class="ribbon" style="background:${ribbon[1]}">${ribbon[0]}</span><h3>${esc(m.title)}</h3></div></div>`;
+  if (ph === 'open') {
+    h += `<dl class="facts"><dt>Where</dt><dd>${esc(m.place)}, ${esc(m.street)}</dd><dt>When</dt><dd>${esc(m.when)}</dd><dt>Vibe</dt><dd>${m.tags.map(esc).join(' · ')}</dd></dl>
+      <p class="cw-desc">${esc(m.desc)}</p>
+      ${m.mine ? '' : `<div class="host">${avatar(m.host.c, m.host.i)}<div><div class="hn">${esc(m.host.n)} ${m.host.ver ? '<span class="pl v">ID verified</span>' : '<span class="pl mu">Phone only</span>'}</div>
+        <div class="hs">LV ${m.host.lvl} ${esc(m.host.rank)} · <b>${m.host.rep.toFixed(1)} ★</b> · ${m.host.done} missions · shows up ${m.host.show}%</div></div></div>`}
+      <div class="eyebrow">CREW ${m.crew[0]} / ${m.crew[1]}</div>${crewRow(false)}
+      <div class="rewards"><div class="rw"><b>+${m.xp} XP</b><span>on check-in</span></div><div class="rw"><b>${m.bp[0]}/${m.bp[1]}</b><span>${esc(m.badge)}</span></div></div>
+      <ul class="safety"><li>Public venue: ${esc(m.place)}</li>${m.women ? '<li>Women only: only verified women can join</li>' : ''}${m.night ? '<li>Night mission: ID-verified only, leave together</li>' : ''}
+        <li>${m.mine ? 'You approve each request' : 'The host approves you. Your profile is shared only with this crew'}</li><li>Live sharing with a trusted contact and SOS</li></ul>
+      ${m.mine ? '<div class="actions"><button class="btn-ghost" type="button" data-a="cancel">CANCEL MISSION</button><button class="btn-ghost" type="button" data-a="route">ROUTE</button></div>'
+      : `<div class="actions"><button class="btn-go" type="button" data-a="accept" ${m.crew[0] >= m.crew[1] ? 'disabled' : ''}>${m.crew[0] >= m.crew[1] ? 'CREW FULL' : 'ACCEPT MISSION'}</button><button class="btn-ghost" type="button" data-a="route">ROUTE</button></div>
+        <button class="cw-link" type="button" data-a="report">Report or block this host</button>`}`;
+  } else if (ph === 'joined') {
+    const soon = m.mins <= 60;
+    h += `<div style="display:flex;align-items:flex-end;gap:12px"><div class="cw-count">${soon ? m.mins : Math.round(m.mins / 60)}<small>${soon ? 'MIN' : 'H'}</small></div><div class="hint">until you meet at<br><b style="color:var(--fg)">${esc(m.place)}</b></div></div>
+      ${crewRow(true)}
+      <div class="chat"><div class="msg sys">${esc(m.host.n)} approved you. Say hi.</div><div class="msg"><b>${esc(m.host.n)}</b>Welcome! I'll be at the entrance, red jacket.</div><div class="msg me"><b>You</b>Great, see you there.</div></div>
+      <label class="toggle"><input type="checkbox" checked><span class="sw"></span>Share live with a trusted contact</label>
+      <div class="hint">Check-in unlocks within 50 m of the venue during the mission window. Use ROUTE to get there.</div>
+      <div class="actions"><button class="btn-gold" type="button" data-a="checkin">CHECK IN AT VENUE</button><button class="btn-ghost" type="button" data-a="route">ROUTE</button></div>
+      <div style="display:flex;gap:16px"><button class="cw-link" type="button" data-a="leave">Leave crew</button><button class="cw-link" type="button" data-a="report">Report a problem · SOS</button></div>`;
+  } else {
+    h += `<div class="passed"><div class="big2">MISSION COMPLETE</div><div class="sub2">met your crew at ${esc(m.place)}</div></div>
+      <div class="rewards"><div class="rw"><b>+${m.xp} XP</b><span>check-in</span></div><div class="rw"><b>+15</b><span>streak bonus</span></div></div>
+      <div class="badge-up"><div class="medal"><svg viewBox="0 0 100 100">${glyph(m.cat, '#b07bff')}</svg></div><div><div class="eyebrow">BADGE PROGRESS</div><div style="font-size:17px;font-weight:700">${esc(m.badge)} ${m.bp[0]} / ${m.bp[1]}</div></div></div>
+      <div class="eyebrow">RATE YOUR CREW (PRIVATE)</div>
+      <div class="chips cw-chips">${['Punctual', 'Good vibes', 'Motivating', 'Great guide', 'Would team up again'].map((t) => `<button class="chip" type="button" data-a="rate" aria-pressed="false">${t}</button>`).join('')}</div>
+      <div class="actions"><button class="btn-go" type="button" data-a="again">TEAM UP AGAIN</button><button class="btn-ghost" type="button" data-a="rewards">SPEND XP</button></div>`;
+  }
+  body.innerHTML = h; body.scrollTop = 0;
+}
+function detailAction(b) {
+  const a = b.dataset.a; if (!a) return;
+  const m = M.find((x) => x.id === ui.sel); if (!m) return;
+  switch (a) {
+    case 'back': ui.sel = null; renderBoard(); renderBlips(); break;
+    case 'accept': me.phase[m.id] = 'joined'; save(); renderDetail(); BW.toast('CREW LOCKED IN', `${m.host.n} approved you`); break;
+    case 'leave': delete me.phase[m.id]; save(); renderDetail(); BW.toast('LEFT THE CREW', 'No penalty more than 2 h before start'); break;
+    case 'checkin': me.phase[m.id] = 'done'; m.bp[0] = Math.min(m.bp[0] + 1, m.bp[1]); renderDetail(); gainXP(m.xp + 15); BW.toast('MISSION COMPLETE', `+${m.xp + 15} XP`); break;
+    case 'report': BW.toast('REPORT SENT', 'The team reviews within 24 h'); break;
+    case 'again': BW.toast('SAME TIME NEXT WEEK', 'Recurring mission created for this crew'); break;
+    case 'rewards': openRewards(); break;
+    case 'rate': b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); break;
+    case 'cancel': M.splice(M.indexOf(m), 1); me.posted = me.posted.filter((p) => p.id !== m.id); save(); ui.sel = null; renderBoard(); renderBlips(); BW.toast('MISSION CANCELLED', 'Your crew was notified'); break;
+    case 'route': // hand the venue to the route finder as the destination, walking
+      setTab('route');
+      BW.setMode('walk');
+      { // no GPS in the demo: start from Piazza Maggiore when there is no nearby start
+        const f = BW.state.from;
+        if (!f || Math.hypot(f.x - m.x, f.y - m.y) > 2.5) BW.setEnd('from', { label: 'Piazza Maggiore', x: .897, y: .578 }, { quiet: true, noFit: true });
+      }
+      BW.setEnd('to', { label: m.place, x: m.x, y: m.y }, { noFit: true });
+      requestAnimationFrame(() => { if (BW.state.route) BW.fitBox(BW.state.route.bb, 800); }); // after the trip card has laid out
+      break;
+  }
+}
+
+// ------------------------------------------------------------------ map blips (DOM, positioned per drawn frame)
+let blipEls = [];
+function renderBlips() {
+  const show = ui.tab === 'crew' ? M : M.filter((m) => m.mine || me.phase[m.id] === 'joined');
+  layer.hidden = !show.length;
+  layer.innerHTML = show.map((m) => `<div class="blip${m.id === ui.sel ? ' sel' : ''}${m.mine ? ' mine' : ''}${passes(m) || ui.tab !== 'crew' ? '' : ' dim'}" data-id="${m.id}">
+    <span class="ring"></span><button class="b" type="button" style="background:${CAT(m.cat).color}" aria-label="${esc(m.title)}"><svg viewBox="0 0 100 100">${glyph(m.cat)}</svg></button><span class="n">${m.crew[0]}/${m.crew[1]}</span></div>`).join('');
+  blipEls = [...layer.children].map((el) => [el, M.find((m) => m.id === el.dataset.id)]);
+  lastKey = ''; place();
+}
+let lastKey = '';
+function place() {
+  if (layer.hidden) return;
+  const c = BW.cam, key = c.x + ',' + c.y + ',' + c.s + ',' + BW.W + ',' + BW.H;
+  if (key === lastKey) return; lastKey = key;
+  const far = c.s < 260;
+  for (const [el, m] of blipEls) {
+    const [sx, sy] = BW.toScreen(m.x, m.y);
+    const off = sx < -60 || sy < -60 || sx > BW.W + 60 || sy > BW.H + 60;
+    el.style.display = off ? 'none' : '';
+    if (!off) el.style.transform = `translate3d(${sx.toFixed(1)}px,${sy.toFixed(1)}px,0)`;
+    el.classList.toggle('far', far);
+  }
+}
+BW.onFrame = place;
+layer.addEventListener('click', (e) => { const el = e.target.closest('.blip'); if (el) select(el.dataset.id); });
+
+// ------------------------------------------------------------------ post a mission
+const TYPES = [
+  ['gym', 'Gym buddy', 'Spotter, class, motivation'], ['food', 'Restaurant', 'Dinner or lunch together'], ['bar', 'Aperitivo / bar', 'Drinks after work'],
+  ['cafe', 'Coffee & language', 'Chat, study, practise'], ['gelato', 'Gelato walk', 'Short and easy'], ['cinema', 'Movie night', 'Same film, same row'],
+  ['museum', 'Culture outing', 'Museums, exhibitions'], ['pizza', 'Pizza night', 'Big table, cheap'], ['burger', 'Food crawl', 'Several stops'], ['club', 'Night out', 'ID-verified only'],
+];
+const W = { step: 0 };
+const modal = $('#cwModal'), wb = $('#wizBody');
+const STEP_T = ["What's the plan?", 'Where do you meet?', 'When and how many?', 'Who can join?'];
+function openWiz() { Object.assign(W, { step: 0, cat: null, place: null, opts: [], title: '', when: 'Tonight 20:00', size: 3, vibe: [], verified: true, women: false, approve: true, age: 'Any', bill: 'Split the bill' }); modal.hidden = false; renderWiz(); }
+function nearPlaces(cat) { // the closest named public places of that type to the middle of the map view
+  const c = BW.cam;
+  return BW.G.places.filter((p) => p.c === cat && p.n).map((p) => [p, Math.hypot(p.x - c.x, p.y - c.y)]).sort((a, b) => a[1] - b[1]).slice(0, 6).map((a) => a[0]);
+}
+function renderWiz() {
+  $('#wizTitle').textContent = STEP_T[W.step];
+  document.querySelectorAll('#wizSteps i').forEach((el, i) => el.classList.toggle('on', i <= W.step));
+  $('#wizBack').textContent = W.step ? 'BACK' : 'CANCEL';
+  const nx = $('#wizNext');
+  nx.textContent = W.step === 3 ? 'POST MISSION' : 'NEXT';
+  nx.disabled = (W.step === 0 && !W.cat) || (W.step === 1 && !W.place);
+  const T = TYPES.find((t) => t[0] === W.cat);
+  if (W.step === 0) wb.innerHTML = `<div class="types">${TYPES.map(([c, n, s]) => `<button class="type" type="button" data-c="${c}" aria-pressed="${W.cat === c}">${icon(c)}<b>${n}</b><span>${s}</span></button>`).join('')}</div><div class="hint">Missions can only be pinned to public places from the map.</div>`;
+  else if (W.step === 1) {
+    if (!W.opts.length) W.opts = nearPlaces(W.cat);
+    wb.innerHTML = `<div class="hint">Closest ${esc(CAT(W.cat).name.toLowerCase())} to the middle of your map view.</div>
+      <div class="places">${W.opts.map((p, i) => `<button class="place" type="button" data-i="${i}" aria-pressed="${W.place === p}">${icon(W.cat)}<span><span class="pt">${esc(p.n)}</span><br><span class="ps">${esc(p.road || 'Bologna')} · public venue</span></span>${W.place === p ? '<span class="pl v" style="margin-left:auto">Selected</span>' : ''}</button>`).join('') || '<div class="cw-empty">None nearby. Move the map and try again.</div>'}</div>
+      <div class="qlabel">MISSION TITLE</div><input class="inp" id="wTitle" maxlength="60" placeholder="e.g. ${esc(T[2])}" value="${esc(W.title)}">`;
+  } else if (W.step === 2) {
+    const chips = (k, list, multi) => `<div class="chips cw-chips" data-k="${k}">${list.map((v) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${multi ? W[k].includes(v) : W[k] === v}">${v}</button>`).join('')}</div>`;
+    wb.innerHTML = `<div class="qlabel">WHEN</div>${chips('when', ['Now', 'Today 18:30', 'Tonight 20:00', 'Tomorrow 12:30', 'Every Tuesday 18:30'])}
+      <div class="qlabel">CREW SIZE (INCLUDING YOU)</div><div class="stepper"><button type="button" data-d="-1" aria-label="Fewer">−</button><output id="wSize">${W.size} people</output><button type="button" data-d="1" aria-label="More">+</button></div>
+      <div class="qlabel">VIBE</div>${chips('vibe', ['Beginner friendly', 'Chill', 'Competitive', 'IT / EN', 'New in town', 'Students'], true)}`;
+  } else {
+    const night = W.cat === 'club';
+    const chips = (k, list) => `<div class="chips cw-chips" data-k="${k}">${list.map((v) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${W[k] === v}">${v}</button>`).join('')}</div>`;
+    wb.innerHTML = `<label class="toggle"><input type="checkbox" id="wVer" ${W.verified || night ? 'checked' : ''} ${night ? 'disabled' : ''}><span class="sw"></span>Verified players only${night ? ' (required at night)' : ''}</label>
+      <label class="toggle"><input type="checkbox" id="wWom" ${W.women ? 'checked' : ''}><span class="sw"></span>Women-only mission</label>
+      <label class="toggle"><input type="checkbox" id="wApp" ${W.approve ? 'checked' : ''}><span class="sw"></span>I approve each request</label>
+      <div class="qlabel">AGE RANGE</div>${chips('age', ['Any', '18–25', '25–35', '35+'])}
+      <div class="qlabel">PAYING</div>${chips('bill', ['Split the bill', 'Each pays own', 'Free activity'])}
+      <div class="summary"><span class="eyebrow">PREVIEW</span><b style="font-size:18px">${esc(W.title || T[1])}</b><span class="hint">${esc(W.place.n)} · ${esc(W.when)} · crew of ${W.size} · +${80 + W.size * 10} XP each on check-in</span></div>`;
+  }
+}
+wb.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('type')) { W.cat = b.dataset.c; W.place = null; W.opts = []; renderWiz(); }
+  else if (b.classList.contains('place')) { W.title = $('#wTitle').value; W.place = W.opts[+b.dataset.i]; renderWiz(); }
+  else if (b.dataset.d) { W.size = Math.max(2, Math.min(6, W.size + +b.dataset.d)); $('#wSize').textContent = W.size + ' people'; }
+  else if (b.dataset.v) {
+    const k = b.parentElement.dataset.k, v = b.dataset.v;
+    if (k === 'vibe') { W.vibe = W.vibe.includes(v) ? W.vibe.filter((x) => x !== v) : [...W.vibe, v]; b.setAttribute('aria-pressed', String(W.vibe.includes(v))); }
+    else { W[k] = v; b.parentElement.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b))); }
+  }
+});
+wb.addEventListener('input', (e) => { if (e.target.id === 'wTitle') W.title = e.target.value; });
+wb.addEventListener('change', (e) => { const k = { wVer: 'verified', wWom: 'women', wApp: 'approve' }[e.target.id]; if (k) W[k] = e.target.checked; });
+$('#wizBack').addEventListener('click', () => { if (W.step) { W.step--; renderWiz(); } else modal.hidden = true; });
+$('#wizX').addEventListener('click', () => { modal.hidden = true; });
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; });
+$('#wizNext').addEventListener('click', () => {
+  if (W.step < 3) { W.step++; renderWiz(); return; }
+  const T = TYPES.find((t) => t[0] === W.cat), p = W.place;
+  const m = { id: 'mine' + Date.now(), mine: true, cat: W.cat, title: W.title || T[1], place: p.n, street: p.road || '', x: p.x, y: p.y, when: W.when, mins: W.when === 'Now' ? 5 : 120,
+    crew: [1, W.size], xp: 80 + W.size * 10, host: { n: 'You', i: 'YOU', c: me.pin, lvl: me.lvl, rank: '', rep: 4.8, done: 12, show: 100, ver: true },
+    tags: [...(W.vibe.length ? W.vibe : [T[2]]), W.bill, W.age === 'Any' ? 'All ages' : W.age], women: W.women, night: W.cat === 'club',
+    desc: `Posted by you. ${W.approve ? 'You approve each request.' : 'Anyone matching your filters can join directly.'}`, badge: 'Host', bp: [0, 5] };
+  M.unshift(m); me.posted.unshift(m); save();
+  modal.hidden = true; ui.group = 'all';
+  select(m.id);
+  BW.toast('MISSION POSTED', `${7 + W.size * 3} players nearby want this too`);
+});
+
+// ------------------------------------------------------------------ rewards
+const UNLOCKS = [
+  [1, 'Newcomer', 'Join missions with crews of up to 3.'], [3, 'First host', 'Post your own missions.'],
+  [5, 'Local', 'Host crews of up to 6. Badges show on your profile.'], [7, 'Pin colours', 'Pick your own map pin colour in the shop.'],
+  [10, 'Regular', 'Weekly recurring missions. Same crew gets first dibs.'], [12, 'Bounty hunter', 'Join venue bounties with crew-only offers.'],
+  [15, 'Crew Captain', 'Night missions, big tables of 12, start a named crew.'], [20, 'Event host', 'Open lobbies for festivals and city events.'],
+  [25, 'Portico Legend', 'Gold pin. Your missions show first on the map.'],
+];
+const SHOP = {
+  perks: [
+    { id: 'p1', cat: 'cafe', venue: 'Caffè Terzi', name: 'Free espresso', d: 'One espresso or cappuccino at the bar.', cost: 300 },
+    { id: 'p2', cat: 'gelato', venue: 'Cremeria Cavour', name: 'Free cup of gelato', d: 'Two flavours, small cup.', cost: 250 },
+    { id: 'p3', cat: 'food', venue: 'Trattoria Da Me nella torre', name: '10% off for your crew', d: 'Whole table, on a mission night.', cost: 800 },
+    { id: 'p4', cat: 'cinema', venue: 'Cinema Modernissimo', name: 'One cinema ticket', d: 'Any regular screening.', cost: 900 },
+    { id: 'p5', cat: 'museum', venue: 'Museo internazionale della musica', name: 'Guided tour for two', d: 'Weekend tours, about an hour.', cost: 700 },
+    { id: 'p6', cat: 'bar', venue: 'Enoteca Giacchero', name: 'Free tagliere for the crew', d: 'Needs 4 or more people checked in together.', cost: 1200, crew: true },
+    { id: 'p7', cat: 'gym', venue: 'Performance Fitness Club', name: '1-week gym pass', d: 'Bring your gym buddy for a week.', cost: 1500 },
+    { id: 'p8', cat: 'gym', venue: 'Performance Fitness Club', name: '1-month gym pass', d: 'The big one. For real regulars.', cost: 3000 },
+  ],
+  style: [
+    { id: 's1', kind: 'pin', color: '#2f9ad6', name: 'Waypoint blue', d: 'The default pin.', cost: 0 },
+    { id: 's2', kind: 'pin', color: '#ff3fa4', name: 'Neon pink pin', d: 'Your avatar and your missions on the map.', cost: 150 },
+    { id: 's3', kind: 'pin', color: '#3fd17a', name: 'Mint pin', d: 'Your avatar and your missions on the map.', cost: 150 },
+    { id: 's4', kind: 'pin', color: '#b07bff', name: 'Violet pin', d: 'Your avatar and your missions on the map.', cost: 200 },
+    { id: 's5', kind: 'pin', color: '#ffcf3f', name: 'Legend gold pin', d: 'Only at level 25.', cost: 0, lvl: 25 },
+    { id: 's6', kind: 'title', title: 'Gym Rat', name: 'Title: Gym Rat', d: 'Earned by finishing 5 gym missions. Shows instead of your rank.', badge: 'gym' },
+    { id: 's7', kind: 'title', title: 'Night Owl', name: 'Title: Night Owl', d: 'Buy it, or earn it free with 5 night missions.', cost: 400 },
+    { id: 's8', kind: 'title', title: 'Tortellini Hunter', name: 'Title: Tortellini Hunter', d: 'Buy it, or earn it free at 5 trattorie.', cost: 400 },
+  ],
+  boost: [
+    { id: 'b1', name: 'Boost my mission', d: 'Your mission sits at the top of the board for 1 hour.', cost: 200, use: true },
+    { id: 'b2', name: 'Priority requests', d: "Your next 3 join requests show first on the host's list. The host still decides.", cost: 150, use: true },
+    { id: 'b3', name: 'Extra mission slot', d: 'Have 3 open missions at once instead of 2.', cost: 400 },
+    { id: 'b4', name: 'Streak freeze', d: 'Skip one week without losing your weekly streak.', cost: 250, use: true },
+  ],
+};
+const ALL = [...SHOP.perks, ...SHOP.style, ...SHOP.boost];
+let armed = null;
+const rwd = $('#rwd');
+function openRewards() { rwd.hidden = false; rwd.scrollTop = 0; renderRewards(); }
+$('#rwdClose').addEventListener('click', () => { rwd.hidden = true; armed = null; });
+addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (!modal.hidden) modal.hidden = true; else if (!rwd.hidden) rwd.hidden = true; });
+function qr(seed) { // decorative code pattern for the voucher
+  let h = 0; for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  let s = '';
+  for (let y = 0; y < 11; y++) for (let x = 0; x < 11; x++) {
+    const fx = x < 3 ? x : x > 7 ? x - 8 : -1, fy = y < 3 ? y : y > 7 ? y - 8 : -1;
+    h = (h * 1103515245 + 12345) >>> 0;
+    const finder = fx >= 0 && fy >= 0 && !(x > 7 && y > 7);
+    if (finder || h & 0x10000) s += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  return `<svg class="qr" viewBox="-1 -1 13 13" fill="#0b1622" aria-hidden="true"><rect x="-1" y="-1" width="13" height="13" fill="#fff"/>${s}</svg>`;
+}
+function itemState(it) {
+  const owned = me.owned.includes(it.id);
+  if (it.lvl && me.lvl < it.lvl) return ['LEVEL ' + it.lvl, true];
+  if (it.badge) { const g = M.find((x) => x.id === 'gym'); return g && g.bp[0] >= g.bp[1] ? (me.title === it.title ? ['EQUIPPED', true] : ['EQUIP', false]) : ['FINISH 5 GYM MISSIONS', true]; }
+  if (it.kind === 'title' && owned) return me.title === it.title ? ['EQUIPPED', true] : ['EQUIP', false];
+  if (it.kind === 'pin' && (owned || it.lvl)) return me.equipped === it.id ? ['EQUIPPED', true] : ['EQUIP', false];
+  if (armed === it.id) return [`CONFIRM −${fmt(it.cost)} XP`, false, true];
+  if (me.wallet < it.cost) return [`NEED ${fmt(it.cost - me.wallet)} MORE XP`, true];
+  return [`${it.use ? 'USE' : 'REDEEM'} ${fmt(it.cost)} XP`, false];
+}
+const buyBtn = (it) => { const [l, dis, conf] = itemState(it); return `<button class="btn-gold buy${conf ? ' confirm' : ''}" type="button" data-id="${it.id}" ${dis ? 'disabled' : ''}>${l}</button>`; };
+function renderRewards() {
+  if (rwd.hidden) return;
+  $('#wBal').innerHTML = `${fmt(me.wallet)}<small>XP</small>`;
+  const cur = UNLOCKS.filter((u) => u[0] <= me.lvl).pop()[0];
+  $('#track').innerHTML = UNLOCKS.map(([lv, n, d]) => `<div class="node${me.lvl >= lv ? ' on' : ''}${cur === lv ? ' cur' : ''}"><div class="lv">${lv}</div><b>${n}</b><span>${d}</span></div>`).join('');
+  $('#shopPerks').innerHTML = SHOP.perks.map((it) => `<div class="item"><div class="ih">${icon(it.cat)}<div><div class="vn">${esc(it.venue)}</div><h4>${esc(it.name)}</h4></div></div><p>${esc(it.d)}</p><div class="chips">${it.crew ? '<span class="pl n">Crew perk</span>' : ''}<span class="pl mu">Sample offer</span></div>${buyBtn(it)}</div>`).join('');
+  $('#shopStyle').innerHTML = SHOP.style.map((it) => `<div class="item${me.owned.includes(it.id) ? ' owned' : ''}"><div class="ih">${it.kind === 'pin' ? `<span class="swatch" style="background:${it.color}"></span>` : '<span class="medal"></span>'}<h4>${esc(it.name)}</h4></div><p>${esc(it.d)}</p>${buyBtn(it)}</div>`).join('');
+  $('#shopBoost').innerHTML = SHOP.boost.map((it) => `<div class="item"><h4>${esc(it.name)}</h4><p>${esc(it.d)}</p>${buyBtn(it)}</div>`).join('');
+  $('#myVouchers').hidden = !me.vouchers.length;
+  $('#vouchers').innerHTML = me.vouchers.map((v) => `<div class="voucher">${qr(v.code)}<div class="vt"><b>${esc(v.name)}</b><span>${esc(v.venue)} · valid until ${esc(v.until)}</span><span class="code">${esc(v.code)}</span></div></div>`).join('');
+}
+rwd.addEventListener('click', (e) => {
+  const b = e.target.closest('.buy'); if (!b || b.disabled) return;
+  const it = ALL.find((x) => x.id === b.dataset.id);
+  if (itemState(it)[0] === 'EQUIP') {
+    if (it.kind === 'pin') { me.equipped = it.id; me.pin = it.color; M.filter((m) => m.mine).forEach((m) => { m.host.c = it.color; }); BW.toast('PIN EQUIPPED', it.name); }
+    else { me.title = it.title; BW.toast('TITLE EQUIPPED', it.title); }
+    save(); renderPlayer(); renderRewards(); return;
+  }
+  if (armed !== it.id) { armed = it.id; renderRewards(); return; }
+  armed = null; me.wallet -= it.cost;
+  if (it.kind) { me.owned.push(it.id); BW.toast('UNLOCKED', `${it.name}. Tap Equip to use it`); }
+  else if (it.cat) {
+    const code = 'BW-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    me.vouchers.unshift({ code, name: it.name, venue: it.venue, until: new Date(Date.now() + 7 * 864e5).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) });
+    BW.toast('VOUCHER READY', `${code} · show it at ${it.venue}`);
+    setTimeout(() => $('#myVouchers').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }), 50);
+  } else {
+    const mine = M.find((m) => m.mine);
+    if (it.id === 'b1' && mine) { M.splice(M.indexOf(mine), 1); M.unshift(mine); if (!mine.tags.includes('Boosted 1 h')) mine.tags.unshift('Boosted 1 h'); renderBoard(); }
+    BW.toast(it.name.toUpperCase(), it.id === 'b1' && !mine ? 'Applies to the next mission you post' : 'Active now');
+  }
+  save(); renderPlayer(); renderRewards();
+});
+
+// ------------------------------------------------------------------ boot
+renderPlayer(); renderBlips();
 })();
 
 </script>
