@@ -1,0 +1,393 @@
+<title>Bologna Waypoint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Search a start and a destination in Bologna and get a route on an open-world game style city map.">
+<style>
+/*FONTS*/
+/* Layout: full-screen canvas map; a floating HUD column (search + trip card) on the left,
+   map controls top-right; on phones the trip card becomes a bottom sheet. One dark game look by design. */
+:root {
+  color-scheme: dark;
+  --sea: #0b2a3e;
+  --ink: #0b1622;
+  --panel: rgba(11, 22, 34, .92);
+  --panel-solid: #0e1b29;
+  --line: rgba(255, 207, 63, .45);
+  --fg: #f4f1ea;
+  --muted: #9fb7c6;
+  --gold: #ffcf3f;
+  --pink: #ff3fa4;
+  --pink-soft: #ff9ad2;
+  --orange: #ff8a3d;
+  --blue: #2f9ad6;
+  --red: #ff4d4d;
+  --field: rgba(255, 255, 255, .07);
+  --field-hover: rgba(255, 255, 255, .12);
+  --f-display: "Bungee", "Impact", "Arial Black", sans-serif;
+  --f-label: "Oswald", "Arial Narrow", sans-serif;
+  --f-ui: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --f-script: "Pacifico", "Brush Script MT", cursive;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; overflow: hidden; background: var(--sea); color: var(--fg);
+  font-family: var(--f-ui); font-size: 17px; -webkit-font-smoothing: antialiased;
+  touch-action: none; overscroll-behavior: none;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#map { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#map.dragging { cursor: grabbing; }
+#map.picking { cursor: crosshair; }
+
+/* ---------- side column */
+.side {
+  position: fixed; z-index: 5;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  width: 370px; max-height: calc(100% - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+}
+.side > * { pointer-events: auto; }
+.card {
+  background: var(--panel); border: 2px solid var(--line); border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.panel { padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.logo {
+  font-family: var(--f-display); font-size: 34px; line-height: 1; letter-spacing: .01em;
+  background: linear-gradient(#ffe37a, #ff8a3d 55%, #ff3f7f); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 #2a0d1d);
+}
+.tag { font-family: var(--f-script); font-size: 17px; color: #fff; opacity: .9; white-space: nowrap; }
+
+.fields { position: relative; display: grid; grid-template-columns: 1fr 40px; gap: 8px 8px; }
+.field {
+  grid-column: 1; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 6px 0 10px;
+  background: var(--field); border: 1.5px solid transparent; border-radius: 12px; transition: border-color .15s, background .15s;
+}
+.field:hover { background: var(--field-hover); }
+.field:focus-within { border-color: var(--gold); background: var(--field-hover); }
+.field input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 19px; font-weight: 700; letter-spacing: .01em;
+}
+.field input::placeholder { color: var(--muted); font-weight: 400; }
+.pin {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--f-display); font-size: 13px; color: #fff; border: 2.5px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.pin-a { background: var(--blue); }
+.pin-b { background: var(--pink); }
+.clear { flex: none; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; }
+.clear:hover { background: var(--field-hover); color: #fff; }
+.swap {
+  grid-column: 2; grid-row: 1 / span 2; align-self: center; width: 40px; height: 40px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: transparent; color: var(--gold); display: grid; place-items: center;
+}
+.swap:hover { background: rgba(255, 207, 63, .12); }
+.suggest {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10; margin: 0; padding: 6px; list-style: none;
+  background: var(--panel-solid); border: 2px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.55);
+  max-height: 340px; overflow-y: auto;
+}
+.suggest li { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+.suggest li[aria-selected="true"], .suggest li:hover { background: rgba(255, 207, 63, .14); }
+.suggest .ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; }
+.suggest .ico img { width: 28px; height: 28px; display: block; }
+.suggest .ico.street { background: #2a3746; color: var(--gold); }
+.suggest .ico.zone { background: #3b2f1f; color: #ffe8c2; }
+.suggest .ico.act { background: transparent; border: 1.5px dashed var(--gold); color: var(--gold); }
+.suggest .t { font-weight: 700; font-size: 18px; line-height: 1.1; }
+.suggest .s { font-size: 14px; color: var(--muted); letter-spacing: .03em; }
+.suggest .tx { min-width: 0; }
+.suggest .tx > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggest .empty { color: var(--muted); padding: 10px; cursor: default; }
+.suggest .empty:hover { background: transparent; }
+
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px; background: var(--field); border-radius: 12px; }
+.modes button {
+  height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 7px; font-weight: 700; letter-spacing: .12em; font-size: 15px;
+}
+.modes button svg { width: 20px; height: 20px; }
+.modes button:hover { color: #fff; }
+.modes button[aria-checked="true"] { background: var(--gold); color: var(--ink); }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--fg); cursor: pointer; user-select: none; }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle .sw { flex: none; width: 38px; height: 22px; border-radius: 11px; background: #3a4654; position: relative; transition: background .15s; }
+.toggle .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.toggle input:checked + .sw { background: var(--pink); }
+.toggle input:checked + .sw::after { transform: translateX(16px); }
+.toggle input:focus-visible + .sw { outline: 2px solid var(--gold); outline-offset: 2px; }
+.toggle .stars { color: var(--gold); letter-spacing: .05em; }
+.toggle[hidden] { display: none; }
+
+.eyebrow { font-family: var(--f-display); font-size: 12px; letter-spacing: .08em; color: var(--gold); }
+.missions { display: flex; flex-direction: column; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1.5px solid rgba(255, 255, 255, .18); background: transparent; border-radius: 999px; padding: 4px 11px;
+  font-size: 15px; font-weight: 700; letter-spacing: .02em; color: var(--fg);
+}
+.chip:hover { border-color: var(--gold); color: var(--gold); }
+.chip .m { color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+/* ---------- trip card */
+.trip { padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.trip-head { display: flex; align-items: center; gap: 10px; }
+.ribbon {
+  font-family: var(--f-display); font-size: 12px; letter-spacing: .1em; color: var(--ink); background: var(--pink);
+  padding: 4px 9px 3px; border-radius: 6px; transform: skewX(-8deg);
+}
+.trip h2 { margin: 0; font-family: var(--f-label); font-weight: 700; font-size: 21px; line-height: 1.15; letter-spacing: .03em; text-transform: uppercase; text-wrap: balance; }
+.stats { display: flex; align-items: flex-end; gap: 16px; }
+.big { font-family: var(--f-display); font-size: 46px; line-height: .9; color: var(--gold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.big small { font-size: 18px; margin-left: 4px; color: #fff; }
+.sub { display: flex; flex-direction: column; gap: 2px; font-size: 18px; font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; padding-bottom: 2px; }
+.sub .eta { color: var(--muted); font-weight: 400; }
+.wanted { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; background: rgba(255, 77, 77, .12); border: 1px solid rgba(255, 77, 77, .35); font-size: 15px; line-height: 1.2; }
+.wanted.clean { background: rgba(47, 163, 90, .12); border-color: rgba(47, 163, 90, .4); }
+.wanted .stars { flex: none; font-size: 17px; letter-spacing: .04em; color: #4b5664; }
+.wanted .stars b { color: var(--gold); font-weight: 400; text-shadow: 0 0 8px rgba(255, 207, 63, .7); }
+.actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.btn-go {
+  height: 46px; border: 0; border-radius: 12px; font-family: var(--f-display); font-size: 17px; letter-spacing: .06em; color: #fff;
+  background: linear-gradient(180deg, #ff5bb2, #e02486); box-shadow: 0 4px 0 #8c1253, 0 8px 18px rgba(255, 63, 164, .35);
+}
+.btn-go:hover { filter: brightness(1.08); }
+.btn-go:active { transform: translateY(2px); box-shadow: 0 2px 0 #8c1253; }
+.btn-ghost { height: 46px; padding: 0 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.22); background: transparent; font-weight: 700; letter-spacing: .08em; font-size: 15px; }
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+.steps { margin: 0; padding: 0; list-style: none; overflow-y: auto; min-height: 0; max-height: 260px; border-top: 1px solid rgba(255,255,255,.1); }
+.steps li { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
+.steps li:hover { background: rgba(255,255,255,.05); }
+.steps .arr { width: 30px; height: 30px; border-radius: 8px; background: #22303f; display: grid; place-items: center; }
+.steps .arr svg { width: 20px; height: 20px; }
+.steps .txt { font-size: 16px; line-height: 1.2; min-width: 0; }
+.steps .txt b { font-weight: 700; }
+.steps .d { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.no-route { font-size: 16px; color: var(--muted); }
+
+/* ---------- map controls */
+.ctrl {
+  position: fixed; z-index: 4; top: calc(16px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.compass { width: 58px; height: 58px; border-radius: 50%; background: rgba(11,22,34,.88); border: 2.5px solid var(--gold); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+.compass svg { width: 40px; height: 40px; }
+.zoom { display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; border: 2px solid var(--line); background: rgba(11,22,34,.9); }
+.zoom button { width: 44px; height: 42px; border: 0; background: transparent; font-size: 24px; font-weight: 700; color: #fff; display: grid; place-items: center; }
+.zoom button + button { border-top: 1px solid rgba(255,255,255,.12); }
+.zoom button:hover { background: rgba(255, 207, 63, .15); color: var(--gold); }
+.zoom svg { width: 20px; height: 20px; }
+
+.scale {
+  position: fixed; z-index: 3; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 13px; letter-spacing: .14em; color: #dfe9ef; pointer-events: none;
+}
+.scale .bar { height: 7px; border: 2px solid #fff; border-top: 0; box-shadow: 0 1px 0 rgba(0,0,0,.5); }
+.credits {
+  position: fixed; z-index: 3; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+  max-width: calc(100% - 300px); text-align: center; font-size: 12.5px; color: #8fb3c4; letter-spacing: .03em; line-height: 1.3; pointer-events: none;
+}
+
+/* ---------- popup on map */
+.pop {
+  position: fixed; z-index: 6; transform: translate(-50%, calc(-100% - 18px)); min-width: 200px; max-width: 260px;
+  background: var(--panel-solid); border: 2px solid var(--gold); border-radius: 14px; padding: 10px 12px 12px; box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.pop::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; background: var(--panel-solid); border-right: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: translateX(-50%) rotate(45deg); }
+.pop .pt { font-family: var(--f-label); font-weight: 700; font-size: 18px; letter-spacing: .03em; text-transform: uppercase; line-height: 1.15; }
+.pop .ps { font-size: 14px; color: var(--muted); margin-top: 2px; }
+.pop .pb { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.pop .pb button { height: 34px; border-radius: 9px; border: 0; font-weight: 700; letter-spacing: .08em; font-size: 14px; }
+.pop .from { background: var(--blue); color: #fff; }
+.pop .to { background: var(--pink); color: #fff; }
+
+/* ---------- toast */
+.toast {
+  position: fixed; z-index: 8; top: calc(24px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  pointer-events: none; text-align: center; transition: opacity .3s, transform .3s; opacity: 0;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(6px); }
+.toast .tt { font-family: var(--f-display); font-size: 28px; letter-spacing: .04em; color: #fff; -webkit-text-stroke: 1.5px #2a0d1d; text-shadow: 0 3px 0 #2a0d1d, 0 0 24px rgba(255,63,164,.6); white-space: nowrap; }
+.toast .ts { font-size: 17px; font-weight: 700; letter-spacing: .1em; color: var(--pink-soft); text-shadow: 0 1px 2px #000; }
+
+/* ---------- navigation HUD */
+.nav-top {
+  position: fixed; z-index: 7; top: calc(16px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px)); display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center;
+  padding: 12px 16px; background: linear-gradient(180deg, #17283a, #0e1b29); border: 2px solid var(--gold); border-radius: 18px; box-shadow: 0 14px 40px rgba(0,0,0,.5);
+}
+.nav-top .na { width: 64px; height: 64px; border-radius: 14px; background: var(--gold); display: grid; place-items: center; }
+.nav-top .na svg { width: 44px; height: 44px; }
+.nav-top .nd { font-family: var(--f-display); font-size: 30px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; }
+.nav-top .ns { font-family: var(--f-label); font-weight: 700; font-size: 21px; line-height: 1.15; text-transform: uppercase; letter-spacing: .03em; margin-top: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-bot {
+  position: fixed; z-index: 7; bottom: calc(40px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 10px 10px 18px; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+.nav-bot .nm { font-family: var(--f-display); font-size: 24px; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nav-bot .nm small { font-family: var(--f-ui); font-weight: 700; font-size: 16px; color: var(--muted); letter-spacing: .08em; margin-left: 8px; }
+.nav-bot .end { height: 44px; padding: 0 18px; border-radius: 12px; border: 0; background: var(--red); color: #fff; font-family: var(--f-display); font-size: 15px; letter-spacing: .06em; }
+.navigating .side, .navigating .credits { display: none; }
+
+/* ---------- loading */
+.loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: radial-gradient(circle at 45% 50%, #0e3b52, #071f33); transition: opacity .4s; }
+.loading.done { opacity: 0; pointer-events: none; }
+.loading .lt { font-family: var(--f-display); font-size: 40px; background: linear-gradient(#ffe37a, #ff8a3d 55%, #ff3f7f); -webkit-background-clip: text; background-clip: text; color: transparent; text-align: center; }
+.loading .ls { font-size: 16px; letter-spacing: .3em; color: var(--muted); text-align: center; margin-top: 8px; }
+.loading .lb { width: 220px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); margin: 16px auto 0; overflow: hidden; }
+.loading .lb i { display: block; height: 100%; width: 40%; background: var(--pink); border-radius: 3px; animation: lb 1s ease-in-out infinite alternate; }
+@keyframes lb { from { transform: translateX(-10%); } to { transform: translateX(160%); } }
+
+/* ---------- phones: search on top, trip card as a bottom sheet */
+@media (max-width: 760px) {
+  .side { left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); top: calc(12px + env(safe-area-inset-top, 0px)); width: auto; max-height: none; bottom: auto; }
+  .panel { padding: 12px; gap: 10px; }
+  .brand { display: none; }
+  .trip { gap: 8px; padding: 12px; }
+  .trip h2 { font-size: 18px; }
+  .wanted { font-size: 13.5px; padding: 5px 8px; }
+  .btn-go, .btn-ghost { height: 42px; }
+  .field { height: 42px; }
+  .field input { font-size: 17px; }
+  .missions { display: none; }
+  .has-route .missions { display: none; }
+  .trip {
+    position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-height: 46%;
+  }
+  .big { font-size: 34px; }
+  .steps { max-height: 180px; }
+  .ctrl { top: auto; bottom: calc(240px + env(safe-area-inset-bottom, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
+  .ctrl .compass { display: none; }
+  .no-trip .ctrl { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+  .scale { display: none; }
+  .credits { left: 12px; right: 12px; transform: none; max-width: none; font-size: 11px; bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
+  .has-route .credits { display: none; }
+  .toast .tt { font-size: 21px; }
+  .nav-top { grid-template-columns: 52px 1fr; padding: 10px 12px; }
+  .nav-top .na { width: 52px; height: 52px; }
+  .nav-top .nd { font-size: 24px; }
+  .nav-top .ns { font-size: 18px; }
+  .nav-bot { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .nav-bot .nm { font-size: 19px; }
+  .nav-bot .nm small { display: block; margin: 2px 0 0; font-size: 14px; }
+}
+@media (max-height: 700px) and (min-width: 761px) {
+  .missions { display: none; }
+  .steps { max-height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast, .loading { transition: none; }
+  .loading .lb i { animation: none; }
+}
+</style>
+
+<canvas id="map" aria-label="Map of Bologna. Drag to pan, scroll or pinch to zoom, click to drop a waypoint."></canvas>
+
+<div class="loading" id="loading" role="status">
+  <div>
+    <div class="lt">BOLOGNA</div>
+    <div class="ls">LOADING CITY MAP</div>
+    <div class="lb"><i></i></div>
+  </div>
+</div>
+
+<div class="side" id="side">
+  <section class="panel card" aria-label="Route search">
+    <header class="brand">
+      <div class="logo" aria-label="Bologna Waypoint">BOLOGNA</div>
+      <div class="tag">waypoint · city GPS</div>
+    </header>
+    <div class="fields">
+      <div class="field">
+        <span class="pin pin-a" aria-hidden="true">A</span>
+        <input id="from" type="text" placeholder="Choose a start" autocomplete="off" spellcheck="false" aria-label="Start" aria-autocomplete="list" aria-controls="suggest">
+        <button class="clear" type="button" data-clear="from" aria-label="Clear start">×</button>
+      </div>
+      <div class="field">
+        <span class="pin pin-b" aria-hidden="true">B</span>
+        <input id="to" type="text" placeholder="Where to?" autocomplete="off" spellcheck="false" aria-label="Destination" aria-autocomplete="list" aria-controls="suggest">
+        <button class="clear" type="button" data-clear="to" aria-label="Clear destination">×</button>
+      </div>
+      <button class="swap" id="swap" type="button" aria-label="Swap start and destination" title="Swap">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v15M3.5 7.5 7 4l3.5 3.5M17 20V5M13.5 16.5 17 20l3.5-3.5"/></svg>
+      </button>
+      <ul class="suggest" id="suggest" role="listbox" hidden></ul>
+    </div>
+    <div class="modes" role="radiogroup" aria-label="Travel mode">
+      <button type="button" role="radio" data-mode="drive" aria-checked="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 10.5 7.3 6.2A2 2 0 0 1 9.1 5h5.8a2 2 0 0 1 1.8 1.2l1.8 4.3A2.5 2.5 0 0 1 20 12.9V17a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4.1a2.5 2.5 0 0 1 1.5-2.4ZM7.6 10h8.8l-1.3-3.1a.8.8 0 0 0-.7-.5H9.6a.8.8 0 0 0-.7.5ZM7 14.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm10 0a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z"/></svg>
+        DRIVE</button>
+      <button type="button" role="radio" data-mode="bike" aria-checked="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="16" r="3.5"/><circle cx="18.5" cy="16" r="3.5"/><path d="M5.5 16 9 9h7l2.5 7M9 9 12 16h2M14 6h3"/></svg>
+        RIDE</button>
+      <button type="button" role="radio" data-mode="walk" aria-checked="false">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="13" cy="4" r="2"/><path d="M10.6 7.4c.5-.3 1.1-.4 1.7-.3l1.4.3c.7.2 1.2.7 1.5 1.3l.9 2.1 2 .9a1 1 0 0 1-.8 1.8l-2.4-1.1a1 1 0 0 1-.5-.5l-.4-.9-.8 3.4 2 2.1c.2.2.3.4.3.7l.5 3.8a1 1 0 0 1-2 .3l-.4-3.5-2.3-2.3-.9 3.5a1 1 0 0 1-.4.6l-2.5 2a1 1 0 1 1-1.2-1.6l2.2-1.7 1.8-7.4-1 .5-.8 2.2a1 1 0 0 1-1.9-.7l1-2.6c.1-.3.3-.5.5-.6Z"/></svg>
+        WALK</button>
+    </div>
+    <label class="toggle" id="ztlToggle">
+      <input type="checkbox" id="avoidZtl" checked>
+      <span class="sw" aria-hidden="true"></span>
+      <span>Avoid the Old Town ZTL <span class="stars" aria-hidden="true">★</span></span>
+    </label>
+    <div class="missions">
+      <div class="eyebrow">QUICK MISSIONS</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </section>
+
+  <section class="trip card" id="trip" aria-live="polite" hidden>
+    <div class="trip-head"><span class="ribbon">MISSION</span><h2 id="tripTitle">Reach your destination</h2></div>
+    <div class="stats">
+      <div class="big"><span id="tMin">0</span><small>MIN</small></div>
+      <div class="sub"><span id="tKm">0 km</span><span class="eta" id="tEta">ETA --:--</span></div>
+    </div>
+    <div class="wanted" id="wanted"><span class="stars" id="wStars" aria-hidden="true"></span><span id="wText"></span></div>
+    <div class="actions">
+      <button class="btn-go" id="go" type="button">START GPS</button>
+      <button class="btn-ghost" id="stepsBtn" type="button" aria-expanded="false" aria-controls="steps">STEPS</button>
+    </div>
+    <ol class="steps" id="steps" hidden></ol>
+  </section>
+</div>
+
+<div class="ctrl">
+  <button class="compass" id="compass" type="button" aria-label="Show the whole city" title="Show the whole city">
+    <svg viewBox="0 0 40 40"><path d="M20 3 26 21 20 17 14 21Z" fill="#ff3f7f"/><path d="M20 37 26 19 20 23 14 19Z" fill="#e8e2d0"/><text x="20" y="13" text-anchor="middle" font-family="Bungee, sans-serif" font-size="0">N</text></svg>
+  </button>
+  <div class="zoom">
+    <button type="button" id="zin" aria-label="Zoom in">+</button>
+    <button type="button" id="zout" aria-label="Zoom out">−</button>
+    <button type="button" id="fit" aria-label="Fit route" title="Fit route">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="scale" id="scale" aria-hidden="true"><span id="scaleTxt">1 KM</span><div class="bar" id="scaleBar" style="width:100px"></div></div>
+<div class="credits">Map data: Comune di Bologna Open Data (CC BY 4.0) · © OpenStreetMap contributors (ODbL) · Fan-made game-style map, not affiliated with any game publisher</div>
+
+<div class="pop" id="pop" hidden>
+  <div class="pt" id="popTitle"></div>
+  <div class="ps" id="popSub"></div>
+  <div class="pb"><button class="from" type="button" id="popFrom">START HERE</button><button class="to" type="button" id="popTo">GO HERE</button></div>
+</div>
+
+<div class="toast" id="toast" aria-live="polite"><div class="tt" id="toastT"></div><div class="ts" id="toastS"></div></div>
+
+<div class="nav-top" id="navTop" hidden>
+  <div class="na" id="navArrow"></div>
+  <div style="min-width:0"><div class="nd" id="navDist">0 M</div><div class="ns" id="navStreet"></div></div>
+</div>
+<div class="nav-bot" id="navBot" hidden>
+  <div class="nm"><span id="navRemain">0 MIN</span><small id="navRemainSub"></small></div>
+  <button class="end" type="button" id="navEnd">END</button>
+</div>
+
+<!--APP-->
